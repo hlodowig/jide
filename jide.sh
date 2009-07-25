@@ -31,10 +31,24 @@
  
 ### GLOBAL CONFIGURATION VAR ###
 
+# JIDE vars
 JIDE_SCRIPT=
 JIDE_PROGNAME=
+JIDE_HOME=
 JIDE_CONFIGFILE="jide.config"
- 
+
+#JIDE Project vars
+JIDE_PROJECT_HOME=
+JIDE_PROJECT_CONFIG_DIR=".jide"
+JIDE_PROJECT_CONFIG_FILE="jide.config"
+JIDE_PROJECT_SRCDIR="src"
+JIDE_PROJECT_CLASSDIR="classes"
+JIDE_PROJECT_NAME="name"
+JIDE_PROJECT_DESC="desc"
+JIDE_PROJECT_CTIME="ctime"
+JIDE_PROJECT_AUTHOR="author"
+
+################################ 
  
 ### COMMON FUNCTION      ###
 
@@ -54,8 +68,53 @@ get_absolute_path() {
    fi
 }
 
+get_var_value() {
+	[ $# -lt 1 ] && return 1
+	local VAR_VALUE
+	eval  VAR_VALUE='$'"${1}"
+	echo $VAR_VALUE
+}
+
+set_var_value() {
+	[ $# -lt 2 ] && return 1
+	local VARNAME=$1
+	shift
+	echo "$VARNAME=$*"
+	eval $VARNAME=$*
+}
+
 print_error() {
-	echo -e "JIDE ERROR: $*" >&2
+	echo -e "$JIDE_PROGNAME: ERROR: $*" >&2
+}
+
+get_project_property() {
+
+	[ -z "$1" ] && return 1
+
+	cd $JIDE_PROJECT_HOME
+	
+	case $1 in
+		JIDE_PROJECT_SRCDIR|JIDE_PROJECT_CLASSDIR) 
+			get_var_value $1;;
+		JIDE_PROJECT_NAME|JIDE_PROJECT_DESC|JIDE_PROJECT_CTIME|JIDE_PROJECT_AUTHOR)
+			local FILE=$JIDE_PROJECT_CONFIG_DIR/$(get_var_value $1)
+			[ -f $FILE ] && cat $FILE;;
+		*) return 1;;
+	esac
+	return 0
+}
+
+set_project_property() {
+	cd $JIDE_PROJECT_HOME
+
+	case $1 in
+		JIDE_PROJECT_SRCDIR|JIDE_PROJECT_CLASSDIR) 
+			set_var_value $1 $2;;
+		JIDE_PROJECT_NAME|JIDE_PROJECT_DESC|JIDE_PROJECT_CTIME|JIDE_PROJECT_AUTHOR) 
+			echo $2 > $JIDE_PROJECT_CONFIG_DIR/$(get_var_value $1);;
+		*) return 1;;
+	esac
+	return 0
 }
 
 ### HELP SECTION         ###
@@ -141,27 +200,88 @@ jide_config() {
 		fi
 	else
 		for cfile in "$JIDE_CONFIGFILE" \
-		              "config/$JIDE_CONFIGFILE" \
-		              "/etc/jide/$JIDE_CONFIGFILE" \
-		              "/usr/local/etc/jide/$JIDE_CONFIGFILE"
+		             "$JIDE_HOME/config/$JIDE_CONFIGFILE" \
+		             "/etc/jide/$JIDE_CONFIGFILE" \
+		             "/usr/local/etc/jide/$JIDE_CONFIGFILE"
 		do
 			if [ -f "$cfile" ]; then
 				echo "Configuration file: $cfile"	
 				source $cfile	
-				return 0
 			fi
 		done
 	fi
 	
 	echo
+	cd $JIDE_PROJECT_HOME
+
+	if [ -f "$JIDE_PROJECT_CONFIG_FILE" ]; then
+		echo "Configuration file: $JIDE_PROJECT_CONFIG_FILE"	
+		source $JIDE_PROJECT_CONFIG_FILE
+	fi
 	
-	return 1;
+	return 0;
 }
 
 jide_init() {
-	#TODO
 	echo "COMMAND='init'"
-	echo "ARGS='$*'"
+	echo "ARGS=$*"
+	
+	cd $JIDE_PROJECT_HOME
+	
+	local FORCE=0
+	local PROJ_NAME=$(basename $JIDE_PROJECT_HOME)
+	local PROJ_AUTHOR=$USER
+	
+	if [ $# -ne 0 ]; then
+
+		# Si raccoglie la stringa generata da getopt.
+		local ARGS=$(getopt -o ?hs:c:n:d:a:f -l name:,description:,sourcepath:,classpath:,author:,help  -- "$@")
+
+		# Si trasferisce nei parametri $1, $2,...
+		eval set -- "$ARGS"
+
+		#echo $*
+		
+		while true ; do
+			#echo $1
+			case "$1" in
+				-n|--name) PROJ_NAME=$2; shift 2;;
+				-d|--description) PROJ_DESC="$2"; shift 2;;
+				-a|--author) PROJ_AUTHOR="$2"; shift 2;;
+				-s|--sourcepath) 
+					$JIDE_PROJECT_SRCDIR=$2
+					echo "JIDE_PROJECT_SRCDIR=$JIDE_PROJECT_SRCDIR" >> $JIDE_PROJECT_CONFIG_FILE   
+					shift 2;;
+				-c|--classpath)  
+					$JIDE_PROJECT_CLASSDIR=$2 
+					echo "JIDE_PROJECT_CLASSDIR=$JIDE_PROJECT_CLASSDIR" >> $JIDE_PROJECT_CONFIG_FILE   					
+					shift 2;;
+				-f|--force) FORCE=1; shift;;
+				--) shift; break;;
+				-h|-?|--help) jide_help_init; exit 0;;
+				*) shift;;
+			esac
+		done	
+	fi
+	
+	if [ -d $JIDE_PROJECT_CONFIG_DIR ]; then
+		if [ $FORCE -eq 0 ]; then
+			echo "JIDE: You are in a project directory"
+			exit -1
+		fi
+		
+		rm $JIDE_PROJECT_CONFIG_DIR/*
+	else
+		mkdir $JIDE_PROJECT_CONFIG_DIR
+	fi
+	
+	set_project_property JIDE_PROJECT_NAME   "$PROJ_NAME"
+	set_project_property JIDE_PROJECT_DESC   "$PROJ_DESC"
+	set_project_property JIDE_PROJECT_AUTHOR "$PROJ_AUTHOR"
+	set_project_property JIDE_PROJECT_CTIME "$(date +'%Y-%m-%d %H:%M:%S')"
+	
+	mkdir -p $JIDE_PROJECT_SRCDIR
+	mkdir -p $JIDE_PROJECT_CLASSDIR
 }
 
 jide_compile() {
@@ -177,9 +297,26 @@ jide_run() {
 }
 
 jide_info() {
-	#TODO
-	echo "COMMAND='info'"
-	echo "ARGS=$*"
+	
+	cd $JIDE_PROJECT_HOME
+	
+	if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
+		echo "JIDE: Not project directory"
+		exit -1
+	fi
+	
+	echo "JIDE Project Info"
+	echo
+	printf "[*] %-20s %s\n" "Name"          "$(get_project_property JIDE_PROJECT_NAME)"
+	printf "[*] %-20s %s\n" "Description"   "$(get_project_property JIDE_PROJECT_DESC)"
+	printf "[*] %-20s %s\n" "Author"        "$(get_project_property JIDE_PROJECT_AUTHOR)"
+	printf "[*] %-20s %s\n" "Creation time" "$(get_project_property JIDE_PROJECT_CTIME)"
+	printf "[*] %-20s %s\n" "Project Path" "$JIDE_PROJECT_HOME"	
+	printf "[*] %-20s %s\n" "Source  Path" "$JIDE_PROJECT_HOME/$JIDE_PROJECT_SRCDIR"
+	printf "[*] %-20s %s\n" "Classes Path" "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CLASSDIR"
+	echo
+	
+	exit $?
 }
 
 jide_clean() {
@@ -190,9 +327,12 @@ jide_clean() {
 
 
 jide_delete() {
-	#TODO
 	echo "COMMAND='delete'"
 	echo "ARGS=$*"
+	
+	cd $JIDE_PROJECT_HOME
+	
+	rm -r $JIDE_PROJECT_CONFIG_DIR
 }
 
 jide_archive() {
@@ -236,11 +376,14 @@ jide_main() {
 	local HELP=0;
 	local CMD="";
 	local ARGS="";
-	
+
+	JIDE_PROJECT_HOME=$PWD
+		
 	while true; do
 		case $1 in
 			-?|-h|--help|help) HELP=1; shift;;
 			-c|--config) CONFIGFILE=$2; shift 2;;
+			-p|--project) JIDE_PROJECT_HOME=$2; shift 2;;
 			init|compile|run|clean|delete|info|archive) CMD=$1; shift; ARGS=$*; break;;
 			"") break;;
 			*) echo print_error "Unknown Command: $1"; exit 1;;
