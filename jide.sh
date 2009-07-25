@@ -184,13 +184,7 @@ jide_main() {
 	# Se lo script è un link di tipo '<progname>-<command>' 
 	# esegui: '<real progname> <command>' 
 	if [ -L "$0" ]; then 
-		local JIDE_PROGRAM=$0
-		while [ -L "$JIDE_PROGRAM" ]; do
-			JIDE_PROGRAM=$(echo $(ls -l $JIDE_PROGRAM | cut -d'>' -f2))
-			if [ $JIDE_PROGRAM[0] != "/" ]; then
-				JIDE_PROGRAM=$PWD/$JIDE_PROGRAM
-			fi
-		done
+		local JIDE_PROGRAM=$(readlink -fnqs $0)
 		
 		CMD=$(basename "$(echo "$0-" | cut -d'-' -f2)" .sh)
 		
