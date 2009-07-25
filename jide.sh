@@ -175,6 +175,27 @@ jide_archive() {
 
 jide_main() {
 
+	if [ -L "$0" ]; then 
+		local JIDE_PROGRAM=$0
+		while [ -L "$JIDE_PROGRAM" ]; do
+			JIDE_PROGRAM=$(echo $(ls -l $JIDE_PROGRAM | cut -d'>' -f2))
+			if [ $JIDE_PROGRAM[0] != "/" ]; then
+				JIDE_PROGRAM=$PWD/$JIDE_PROGRAM
+			fi
+		done
+		
+		CMD=$(basename "$(echo "$0-" | cut -d'-' -f2)" .sh)
+		
+		#echo "EXEC >>> $JIDE_PROGRAM $CMD"
+		
+		if [ -n "$CMD" ]; then
+			#echo "E' un link al comando $CMD"
+			case $CMD in
+				init|compile|run|clean|delete|info|archive) exec $JIDE_PROGRAM $CMD $*;;
+			esac
+		fi
+	fi
+	
 	if [ -z "$*" ]; then
 		jide_usage
 		exit 1
