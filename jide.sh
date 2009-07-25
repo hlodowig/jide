@@ -138,43 +138,51 @@ jide_config() {
 
 jide_init() {
 	#TODO
-	echo "INIT COMMAND"
+	echo "COMMAND='init'"
+	echo "ARGS='$*'"
 }
 
 jide_compile() {
 	#TODO
-	echo "COMPILE COMMAND"
+	echo "COMMAND='compile'"
+	echo "ARGS=$*"
 }
 
 jide_run() {
 	#TODO
-	echo "RUN COMMAND"
+	echo "COMMAND='run'"
+	echo "ARGS=$*"
 }
 
 jide_info() {
 	#TODO
-	echo "INFO COMMAND"
+	echo "COMMAND='info'"
+	echo "ARGS=$*"
 }
 
 jide_clean() {
 	#TODO
-	echo "CLEAN COMMAND"
+	echo "COMMAND='clean'"
+	echo "ARGS=$*"
 }
 
 
 jide_delete() {
 	#TODO
-	echo "DELETE COMMAND"
+	echo "COMMAND='delete'"
+	echo "ARGS=$*"
 }
 
 jide_archive() {
 	#TODO
-	echo "ARCHIVE COMMAND"
+	echo "COMMAND='archive'"
+	echo "ARGS=$*"
 }
 
 
 jide_main() {
-
+	# Se lo script è un link di tipo '<progname>-<command>' 
+	# esegui: '<real progname> <command>' 
 	if [ -L "$0" ]; then 
 		local JIDE_PROGRAM=$0
 		while [ -L "$JIDE_PROGRAM" ]; do
@@ -191,16 +199,20 @@ jide_main() {
 		if [ -n "$CMD" ]; then
 			#echo "E' un link al comando $CMD"
 			case $CMD in
-				init|compile|run|clean|delete|info|archive) exec $JIDE_PROGRAM $CMD $*;;
+				init|compile|run|clean|delete|info|archive) 
+					exec $JIDE_PROGRAM $CMD $*;;
 			esac
 		fi
 	fi
 	
+	# Se al programma non vengono passati argomenti visualizza la stampa di 
+	# utilizzo ed esci
 	if [ -z "$*" ]; then
 		jide_usage
 		exit 1
 	fi
 	
+	# Analizza gli argomenti
 	local CONFIGFILE=""
 	local HELP=0;
 	local CMD="";
@@ -216,6 +228,8 @@ jide_main() {
 		esac
 	done
 	
+	# Se tra le optioni prima di un eventuale comando era presente l'optione di
+	# help esegui tale comando
 	if [ $HELP -eq 1 ]; then
 		jide_help $CMD;
 		exit 0
