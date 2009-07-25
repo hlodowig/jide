@@ -31,6 +31,8 @@
  
 ### GLOBAL CONFIGURATION VAR ###
 
+JIDE_SCRIPT=
+JIDE_PROGNAME=
 JIDE_CONFIGFILE="jide.config"
  
  
@@ -38,7 +40,21 @@ JIDE_CONFIGFILE="jide.config"
 
 ### END COMMON FUNCTION  ###
 
-jide_print_error() {
+# This function converts a relative path to an absolute path
+get_absolute_path() {
+   local FILEPATH=$(echo "$1" | awk '{gsub("^ *",""); print}')
+   FILEPATH=$(echo "$FILEPATH" | awk '{gsub("^./",""); print}')
+   
+   if echo $FILEPATH | grep "^/" >/dev/null ; then
+      # This is an absolute
+      echo $FILEPATH
+   else
+      # This is a relative path
+      echo "${PWD}/$FILEPATH"
+   fi
+}
+
+print_error() {
 	echo -e "JIDE ERROR: $*" >&2
 }
 
@@ -110,12 +126,18 @@ jide_config() {
 	#TODO
 	echo "JIDE CONFIGURATION"
 	
+	JIDE_SCRIPT=$(get_absolute_path $JIDE_PROGNAME)
+	JIDE_HOME=$(dirname $JIDE_SCRIPT)
+	
+	echo "JIDE_SCRIPT=$JIDE_SCRIPT"
+	echo "JIDE_HOME=$JIDE_HOME"
+	
 	if [ -n "$1" ]; then	
 		if [ -f "$1" ]; then
 			echo "Configuration file: $1"	
 			source $1
 		else
-			jide_print_error "Configuration file: $1 not found"; exit 2;
+			print_error "Configuration file: $1 not found"; exit 2;
 		fi
 	else
 		for cfile in "$JIDE_CONFIGFILE" \
@@ -181,20 +203,23 @@ jide_archive() {
 
 
 jide_main() {
+
+	JIDE_PROGNAME=$0
+	
 	# Se lo script è un link di tipo '<progname>-<command>' 
 	# esegui: '<real progname> <command>' 
-	if [ -L "$0" ]; then 
-		local JIDE_PROGRAM=$(readlink -fnqs $0)
+	if [ -L "$JIDE_PROGNAME" ]; then 
+		JIDE_SCRIPT=$(readlink -enqs $0)
 		
-		CMD=$(basename "$(echo "$0-" | cut -d'-' -f2)" .sh)
+		CMD=$(basename "$(echo "$JIDE_PROGNAME-" | cut -d'-' -f2)" .sh)
 		
-		#echo "EXEC >>> $JIDE_PROGRAM $CMD"
+		#echo "EXEC >>> $JIDE_SCRIPT $CMD"
 		
 		if [ -n "$CMD" ]; then
 			#echo "E' un link al comando $CMD"
 			case $CMD in
 				init|compile|run|clean|delete|info|archive) 
-					exec $JIDE_PROGRAM $CMD $*;;
+					exec $JIDE_SCRIPT $CMD $*;;
 			esac
 		fi
 	fi
@@ -218,7 +243,7 @@ jide_main() {
 			-c|--config) CONFIGFILE=$2; shift 2;;
 			init|compile|run|clean|delete|info|archive) CMD=$1; shift; ARGS=$*; break;;
 			"") break;;
-			*) echo jide_print_error "Unknown Command: $1"; exit 1;;
+			*) echo print_error "Unknown Command: $1"; exit 1;;
 		esac
 	done
 	
@@ -230,7 +255,7 @@ jide_main() {
 	fi
 	
 	if [ -z "$CMD" ]; then
-		jide_print_error "No command"
+		print_error "No command"
 		jide_usage
 		exit 1
 	else
