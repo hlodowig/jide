@@ -36,6 +36,7 @@ JIDE_SCRIPT=
 JIDE_PROGNAME=
 JIDE_HOME=
 JIDE_CONFIGFILE="jide.config"
+JAVA_COMPILER="javac"
 
 #JIDE Project vars
 JIDE_PROJECT_HOME=
@@ -47,7 +48,8 @@ JIDE_PROJECT_NAME="name"
 JIDE_PROJECT_DESC="desc"
 JIDE_PROJECT_CTIME="ctime"
 JIDE_PROJECT_AUTHOR="author"
-
+JIDE_PROJECT_MAIN_CLASSES="main_classes"
+JIDE_PROJECT_JAVA_SOURCES="sources"
 ################################ 
  
 ### COMMON FUNCTION      ###
@@ -117,6 +119,101 @@ set_project_property() {
 	return 0
 }
 
+get_classname() {
+	test $# -eq 0 && return
+	
+	local CLASSNAME=$1
+	
+	if [ $# -gt 1 ]; then
+		CLASSNAME=${1#$2}
+	fi
+	
+	CLASSNAME=${CLASSNAME#/}
+	CLASSNAME=${CLASSNAME%.*}
+	CLASSNAME=${CLASSNAME//\//.}
+	
+	echo $CLASSNAME
+}
+
+get_classfile() {
+	test $# -eq 0 && return
+	
+	if [ $# -eq 1 ] || [ $# -eq 3 ]; then
+	
+		local CLASSNAME=${1//.java/.class}
+	
+		if [ "$2" != "$3" ]; then
+			CLASSNAME=${CLASSNAME#$2}
+			CLASSNAME=${CLASSNAME#/}
+			CLASSNAME=$3/$CLASSNAME
+		fi
+
+		echo $CLASSNAME
+		return 0	
+	fi
+
+	return 1
+}
+
+get_file_mod_time() {
+	stat -c %Y $1
+}
+
+function jide_run_help() {
+	echo "$JIDE_PROGNAME compile [-n|--name <project_name>] [-d|--description <project_description>] [-s | --sourcepath <path>] [-c | --classpath <path>] [-f|--force]"
+}
+
+function find_program() {
+	for mp in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
+		if [ "$1" = "$mp" ]; then
+			return 0
+		fi
+	done
+	
+	return 1
+}
+
+__get_prog() {
+
+	local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
+	
+	
+	[ $1 -lt 0 ] || [ $1 -ge $mp_num ] && return
+	
+	local np=0
+	for prog in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
+		[ $1 -eq $((np++)) ] && __PROGNAME=$prog
+	done
+}
+
+__run() {
+	[ -z "$*" ] && return
+	 
+	local prog
+	case $1 in
+		*[!0-9]*) find_program $1 && prog=$1;;
+		*) __get_prog $1; prog=$__PROGNAME;;
+	esac
+
+	if [ -n "$prog" ]; then
+		echo "Run program: $prog"
+		java -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
+	else
+		echo "Program not found!"		
+	fi
+}
+
+__print_main_classes() {
+	local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
+	local mp_cifre=${#mp_num}
+	echo "[*] $mp_num Main class:"
+	local x=0
+	for mp in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
+		printf "    [%${mp_cifre}d] %s\n" $((x++)) $mp
+	done
+}
+
+
 ### HELP SECTION         ###
 
 jide_usage() {
@@ -141,11 +238,15 @@ jide_help_init() {
 jide_help_compile() {
 	#TODO
 	echo "HELP COMPILE"
+	echo "$JIDE_PROGNAME compile [-s | --sourcepath <path>] [-c | --classpath <path>]"
+
 }
 
 jide_help_run() {
 	#TODO
 	echo "HELP RUN"
+	echo "$JIDE_PROGNAME compile [-n|--name <project_name>] [-d|--description <project_description>] [-s | --sourcepath <path>] [-c | --classpath <path>] [-f|--force]"
+
 }
 
 jide_help_info() {
@@ -170,10 +271,13 @@ jide_help_archive() {
 }
 
 jide_help() {
-	if [ -z "$*" ]; then
-		echo "Help"
+	if [ -z "$1" ]; then
+		echo "HELP"
 	else
-		jide_help_$1
+		case $1 in
+			init|compile|run|clean|delete|info|archive) jide_help_$1;;
+			*) jide_help;;
+		esac
 	fi
 }
 
@@ -206,17 +310,19 @@ jide_config() {
 		do
 			if [ -f "$cfile" ]; then
 				echo "Configuration file: $cfile"	
-				source $cfile	
+				source $cfile
+				break	
 			fi
 		done
 	fi
 	
 	echo
+	
 	cd $JIDE_PROJECT_HOME
 
-	if [ -f "$JIDE_PROJECT_CONFIG_FILE" ]; then
-		echo "Configuration file: $JIDE_PROJECT_CONFIG_FILE"	
-		source $JIDE_PROJECT_CONFIG_FILE
+	if [ -f "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE" ]; then
+		echo "Configuration file: $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE"	
+		source $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE
 	fi
 	
 	return 0;
@@ -288,12 +394,111 @@ jide_compile() {
 	#TODO
 	echo "COMMAND='compile'"
 	echo "ARGS=$*"
+	
+	cd $JIDE_PROJECT_HOME
+
+	if [ $# -ne 0 ]; then
+
+		# Si raccoglie la stringa generata da getopt.
+		local ARGS=$(getopt -o ?hs:c: -l sourcepath:,classpath:,help  -- "$@" 2> /dev/null)
+
+		# Si trasferisce nei parametri $1, $2,...
+		eval set -- "$ARGS"
+
+
+		while true ; do
+			case "$1" in
+				-s|--sourcepath) JIDE_PROJECT_SRCDIR=$2;   shift 2;;
+				-c|--classpath)  JIDE_PROJECT_CLASSDIR=$2; shift 2;;
+				--) shift; break;;
+				-h|-?|--help) jide_help_compile; exit 0;;
+				*) shift;;
+			esac
+		done	
+	fi
+	
+	if [ ! -d $JIDE_PROJECT_CLASSDIR ]; then
+		echo "Create classes dir: $JIDE_PROJECT_CLASSDIR"
+		mkdir $JIDE_PROJECT_CLASSDIR
+	fi
+
+	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
+	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
+	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
+	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVE_SOURCES
+	
+	local JDIRS="$(ls -R $JIDE_PROJECT_SRCDIR | grep : | cut -d: -f1)"
+	local JFILES=""
+	
+	echo $JDIRS
+	
+	for dir in $JDIRS; do
+		JFILES="$(ls $dir/*.java 2>/dev/null) $JFILES"
+	done
+
+	#echo -e $JFILES
+	
+	local cf=0
+	
+	if [ -n "$JFILES" ]; then
+		for jfile in $JFILES; do
+			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
+			
+			cfile=$(get_classfile $jfile $JIDE_PROJECT_SRCDIR $JIDE_PROJECT_CLASSDIR)
+			if [ -n "$(grep "void main" $jfile)" ]; then
+				echo "Trovato main in $jfile"
+				get_classname $jfile $JIDE_PROJECT_SRCDIR >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
+			fi
+			
+			if [ ! -f "$cfile" ] || [ $(get_file_mod_time $jfile) -gt $(get_file_mod_time $cfile) ]; then
+				echo "Compile: $jfile --> $cfile"
+				$JAVA_COMPILER -sourcepath $JIDE_PROJECT_SRCDIR -d $JIDE_PROJECT_CLASSDIR $jfile
+				let cf=$cf+1
+			fi
+		done
+	else 
+		echo "No found java source files"
+	fi
+
+	printf "Compiled %d files\n" $cf
+
+	exit $?
 }
 
 jide_run() {
 	#TODO
 	echo "COMMAND='run'"
 	echo "ARGS=$*"
+
+	cd $JIDE_PROJECT_HOME
+	
+	if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
+		echo "JIDE: Not project directory"
+		exit -1
+	fi
+
+	if [ ! -f $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
+		echo "Project not compiled"
+		exit -1
+	else
+		local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
+		
+		if [ $mp_num -eq 0 ]; then
+			echo "Thera are not main class in this project"
+			exit -1		
+		fi	
+	fi
+
+	if [ -z "$*" ]; then
+		__print_main_classes
+		exit 0
+	fi
+	
+	for prog in $*; do
+		__run $prog
+	done
+	
+	exit $?
 }
 
 jide_info() {
@@ -351,7 +556,7 @@ jide_main() {
 	if [ -L "$JIDE_PROGNAME" ]; then 
 		JIDE_SCRIPT=$(readlink -enqs $0)
 		
-		CMD=$(basename "$(echo "$JIDE_PROGNAME-" | cut -d'-' -f2)" .sh)
+		CMD=$(basename "$(echo "$JIDE_PROGNAME-" | cut -s -d'-' -f2)" .sh)
 		
 		#echo "EXEC >>> $JIDE_SCRIPT $CMD"
 		
