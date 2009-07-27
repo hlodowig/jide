@@ -80,8 +80,8 @@ import()
 	[ -f $LIB ] && source $LIB || exit 1 
 }
 
-#import fs
-#import java_utils
+import fs
+import java_utils
 import jide-common
 import jide-config
 import jide-init

@@ -66,6 +66,9 @@ jide_compile()
 	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
 	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
 	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVE_SOURCES
+
+	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d 2> /dev/null
+	mkdir $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d
 	
 	local JDIRS="$(ls -R $JIDE_PROJECT_SRCDIR | grep : | cut -d: -f1)"
 	local JFILES=""
@@ -73,24 +76,33 @@ jide_compile()
 	echo $JDIRS
 	
 	for dir in $JDIRS; do
-		JFILES="$(ls $dir/*.java 2>/dev/null) $JFILES"
+		JFILES="$JFILES $(ls $dir/*.java 2>/dev/null)"
 	done
 
 	#echo -e $JFILES
 	
 	local cf=0
+	local mf=0
+	local classname
 	
 	if [ -n "$JFILES" ]; then
 		for jfile in $JFILES; do
 			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
 			
-			cfile=$(get_classfile $jfile $JIDE_PROJECT_SRCDIR $JIDE_PROJECT_CLASSDIR)
-			if [ -n "$(grep "void main" $jfile)" ]; then
-				echo "Trovato main in $jfile"
-				get_classname $jfile $JIDE_PROJECT_SRCDIR >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
+			cfile=$(get_java_classfile $jfile $JIDE_PROJECT_CLASSDIR)
+			if is_java_mainclass "$jfile"; then
+				#echo "Trovato main in $jfile"
+				classname=$(get_java_classname $jfile) 
+				echo $classname >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
+				(
+					cd $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d
+					echo $mf > $classname
+					ln -sf $classname $mf
+				)
+				let mf=$mf+1
 			fi
 			
-			if [ ! -f "$cfile" ] || [ $(get_file_mod_time $jfile) -gt $(get_file_mod_time $cfile) ]; then
+			if [ ! -f "$cfile" ] || [ $(get_file_modify_time $jfile) -gt $(get_file_modify_time $cfile) ]; then
 				echo "Compile: $jfile --> $cfile"
 				$JAVA_COMPILER -sourcepath $JIDE_PROJECT_SRCDIR -d $JIDE_PROJECT_CLASSDIR $jfile
 				let cf=$cf+1
