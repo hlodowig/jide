@@ -48,7 +48,7 @@ __jide_run()
 	if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
 		echo "JIDE Run program: $prog"
 		echo
-		java -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
+		$JAVA_VM -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
 	else
 		print_error "Program not found!"		
 	fi

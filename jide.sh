@@ -57,6 +57,7 @@ JIDE_HOME=$(dirname $JIDE_SCRIPT)
 JIDE_LIBDIR="lib"
 JIDE_CONFIGFILE="jide.config"
 JAVA_COMPILER="javac"
+JAVA_VM="java"
 
 #JIDE Project vars
 JIDE_PROJECT_HOME=
