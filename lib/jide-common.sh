@@ -219,6 +219,35 @@ __jide_get_prog()
 	esac
 }
 
+__jide_project_configure()
+{
+	#TODO
+	echo "JIDE Configuration"
+}
+
+__jide_project_clean() 
+{
+	( 
+	  cd $JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR
+	  rm -r $JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
+	  rm -r $JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
+	)
+}
+
+__jide_project_clean_sourcedir() 
+{
+	for dir in $(__jide_get_source_dir_list); do
+		rm $dir/*~ 2> /dev/null
+	done
+}
+
+__jide_project_clean_classdir() 
+{
+	for dir in $(__jide_get_class_dir_list); do
+		rm $dir/*{~,.class} 2> /dev/null
+	done
+}
+
 __jide_run() 
 {
 	[ -z "$1" ] && return
@@ -284,33 +313,6 @@ __jide_print_main_classes()
 	done
 }
 
-__jide_project_configure()
-{
-	echo "COnfig"
-}
-__jide_project_clean() 
-{
-	( 
-	  cd $JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR
-	  rm -r $JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
-	  rm -r $JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
-	)
-}
-
-__jide_project_clean_sourcedir() 
-{
-	for dir in $(__jide_get_source_dir_list); do
-		rm $dir/*~ 2> /dev/null
-	done
-}
-
-__jide_project_clean_classdir() 
-{
-	for dir in $(__jide_get_class_dir_list); do
-		rm $dir/*{~,.class} 2> /dev/null
-	done
-}
-
 __jide_compile_javafile() #
 {
 	test -z "$1"        && return 1 # No mainclass
@@ -322,10 +324,21 @@ __jide_compile_javafile() #
 	
 	JIDE_PROJECT_HOME="$PRJ_DIR"
 	
-	local CLASSDIR="$(__jide_get_project_class_dir)"
+	local SRCDIR="$(__jide_get_project_source_dir)"
 	local CLASSDIR="$(__jide_get_project_class_dir)"
 	
+	if java_compile "$1" "$CLASSDIR"; then
 	
+		if ! is_file $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES; then
+			echo $jfile > $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
+		else
+			if ! cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES | grep -q "$jfile"; then
+				echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES			
+			fi
+		fi
+	
+		__jide_process_mainclass "$jfile"
+	fi	
 }
 
 
