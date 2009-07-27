@@ -62,13 +62,10 @@ jide_compile()
 		mkdir $JIDE_PROJECT_CLASSDIR
 	fi
 
-	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
-	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
 	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
 	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVE_SOURCES
-
-	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d 2> /dev/null
-	mkdir $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d
+	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
+	mkdir $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
 	
 	local JDIRS="$(ls -R $JIDE_PROJECT_SRCDIR | grep : | cut -d: -f1)"
 	local JFILES=""
@@ -93,9 +90,9 @@ jide_compile()
 			if is_java_mainclass "$jfile"; then
 				#echo "Trovato main in $jfile"
 				classname=$(get_java_classname $jfile) 
-				echo $classname >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
+
 				(
-					cd $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES.d
+					cd $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
 					echo $mf > $classname
 					ln -sf $classname $mf
 				)

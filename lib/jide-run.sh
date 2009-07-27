@@ -29,39 +29,21 @@ jide_help_run()
 	echo "$JIDE_PROGNAME compile [-n|--name <project_name>] [-d|--description <project_description>] [-s | --sourcepath <path>] [-c | --classpath <path>] [-f|--force]"
 }
 
-function __find_program() {
-	for mp in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
-		if [ "$1" = "$mp" ]; then
-			return 0
-		fi
-	done
-	
-	return 1
-}
+__jide_get_prog() {
+    ! test -e $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1 && return 1
 
-__get_prog() {
-
-	local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
-	
-	
-	[ $1 -lt 0 ] || [ $1 -ge $mp_num ] && return
-	
-	local np=0
-	for prog in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
-		[ $1 -eq $((np++)) ] && __PROGNAME=$prog
-	done
-}
-
-__run() {
-	[ -z "$*" ] && return
-	 
-	local prog
 	case $1 in
-		*[!0-9]*) __find_program $1 && prog=$1;;
-		*) __get_prog $1; prog=$__PROGNAME;;
+		*[!0-9]*) echo $1;;
+		*) readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1;;
 	esac
+}
 
-	if [ -n "$prog" ]; then
+__jide_run() {
+	[ -z "$1" ] && return
+	 
+	local prog=$(__jide_get_prog "$1")
+	
+	if [ -n "$prog" ] || [ $FORCE -eq 1 ]; then
 		echo "Run program: $prog"
 		java -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
 	else
@@ -69,13 +51,14 @@ __run() {
 	fi
 }
 
-__print_main_classes() {
-	local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
+__jide_print_main_classes() {
+	local mp_links="$(ls -1 $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | grep -e "^[0-9][0-9]*"| sort -n)"
+	local mp_num=$(echo "$mp_links" | wc -l | cut -d' ' -f1)
 	local mp_cifre=${#mp_num}
 	echo "[*] $mp_num Main class:"
-	local x=0
-	for mp in $(cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES); do
-		printf "    [%${mp_cifre}d] %s\n" $((x++)) $mp
+
+	for mp in $mp_links; do
+		printf "    [%${mp_cifre}d] %s\n" $mp $(readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$mp)
 	done
 }
 
@@ -91,25 +74,23 @@ jide_run()
 		exit -1
 	fi
 
-	if [ ! -f $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
+	if [ ! -d $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
 		echo "Project not compiled"
 		exit -1
 	else
-		local mp_num=$(wc -l $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | cut -d' ' -f1)
-		
-		if [ $mp_num -eq 0 ]; then
-			echo "Thera are not main class in this project"
+		if [ -z "$(ls $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES)" ]; then
+			echo "There are not main class in this project"
 			exit -1		
 		fi	
 	fi
 
 	if [ -z "$*" ]; then
-		__print_main_classes
+		__jide_print_main_classes
 		exit 0
 	fi
 	
 	for prog in $*; do
-		__run $prog
+		__jide_run $prog
 	done
 	
 	exit $?
