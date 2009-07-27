@@ -32,6 +32,9 @@ jide_init()
 {
 	echo "COMMAND='init'"
 	echo "ARGS=$*"
+
+	JIDE_PROJECT_HOME=${JIDE_PROJECT_HOME:=$PWD}
+	echo "INIT: $(get_relative_path "$JIDE_PROJECT_HOME")"
 	
 	cd $JIDE_PROJECT_HOME
 	
@@ -52,18 +55,12 @@ jide_init()
 		while true ; do
 			#echo $1
 			case "$1" in
-				-n|--name) PROJ_NAME=$2; shift 2;;
-				-d|--description) PROJ_DESC="$2"; shift 2;;
-				-a|--author) PROJ_AUTHOR="$2"; shift 2;;
-				-s|--sourcepath) 
-					$JIDE_PROJECT_SRCDIR=$2
-					echo "JIDE_PROJECT_SRCDIR=$JIDE_PROJECT_SRCDIR" >> $JIDE_PROJECT_CONFIG_FILE   
-					shift 2;;
-				-c|--classpath)  
-					$JIDE_PROJECT_CLASSDIR=$2 
-					echo "JIDE_PROJECT_CLASSDIR=$JIDE_PROJECT_CLASSDIR" >> $JIDE_PROJECT_CONFIG_FILE   					
-					shift 2;;
-				-f|--force) FORCE=1; shift;;
+				-n|--name)        PROJ_NAME=$2             ; shift 2;;
+				-d|--description) PROJ_DESC="$2"           ; shift 2;;
+				-a|--author)      PROJ_AUTHOR="$2"         ; shift 2;;
+				-s|--sourcepath)  JIDE_PROJECT_SRCDIR=$2   ; shift 2;;
+				-c|--classpath)   JIDE_PROJECT_CLASSDIR=$2 ; shift 2;;
+				-f|--force)       FORCE=1                  ; shift 1;;
 				--) shift; break;;
 				-h|-?|--help) jide_help_init; exit 0;;
 				*) shift;;
@@ -82,12 +79,13 @@ jide_init()
 		mkdir $JIDE_PROJECT_CONFIG_DIR
 	fi
 	
-	set_project_property JIDE_PROJECT_NAME   "$PROJ_NAME"
-	set_project_property JIDE_PROJECT_DESC   "$PROJ_DESC"
-	set_project_property JIDE_PROJECT_AUTHOR "$PROJ_AUTHOR"
-	set_project_property JIDE_PROJECT_CTIME "$(date +'%Y-%m-%d %H:%M:%S')"
+	__jide_project_set_property JIDE_PROJECT_NAME   "$PROJ_NAME"
+	__jide_project_set_property JIDE_PROJECT_DESC   "$PROJ_DESC"
+	__jide_project_set_property JIDE_PROJECT_AUTHOR "$PROJ_AUTHOR"
+	__jide_project_set_property JIDE_PROJECT_CTIME "$(date +'%Y-%m-%d %H:%M:%S')"
 	
-	mkdir -p $JIDE_PROJECT_SRCDIR
-	mkdir -p $JIDE_PROJECT_CLASSDIR
+	__jide_set_project_home_dir   "$JIDE_PROJECT_HOME"
+	__jide_set_project_source_dir "$JIDE_PROJECT_SRCDIR"
+	__jide_set_project_class_dir  "$JIDE_PROJECT_CLASSDIR"
 }
 

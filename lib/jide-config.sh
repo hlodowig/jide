@@ -45,25 +45,29 @@ jide_config()
 			print_error "Configuration file: $1 not found"; exit 2;
 		fi
 	else
-		for cfile in "$JIDE_CONFIGFILE" \
-		             "$JIDE_HOME/config/$JIDE_CONFIGFILE" \
+		for cfile in "$JIDE_CONFIG_FILE" \
+					 ".$JIDE_CONFIG_FILE" \
+					 "$JIDE_PROJECT_CONFIG_DIR/$JIDE_CONFIG_FILE" \
+					 "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_CONFIG_FILE" \
+					 "$HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_CONFIG_FILE" \
+		             "$JIDE_HOME/config/$JIDE_CONFIG_FILE" \
 		             "/etc/jide/$JIDE_CONFIGFILE" \
-		             "/usr/local/etc/jide/$JIDE_CONFIGFILE"
+		             "/usr/local/etc/jide/$JIDE_CONFIG_FILE"
 		do
 			if [ -f "$cfile" ]; then
-				#echo "Configuration file: $cfile"	
+				echo "Configuration file: $cfile"	
 				source $cfile
-				break	
+				break
 			fi
 		done
 	fi
 	
-	cd $JIDE_PROJECT_HOME
-
-	if [ -f "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE" ]; then
-		echo "Configuration file: $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE"	
-		source $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE
-	fi
+#	cd $JIDE_PROJECT_HOME
+#
+#	if [ -f "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE" ]; then
+#		echo "Configuration file: $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE"	
+#		source $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_CONFIG_FILE
+#	fi
 	
 	return 0;
 }

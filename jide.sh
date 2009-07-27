@@ -48,41 +48,21 @@ if [ -L "$JIDE_SCRIPT" ]; then
 		exit $?
 	fi
 fi
-	 
-### GLOBAL CONFIGURATION VAR ###
-
-# JIDE vars
-
+	
 JIDE_HOME=$(dirname $JIDE_SCRIPT)
 JIDE_LIBDIR="lib"
-JIDE_CONFIGFILE="jide.config"
-JAVA_COMPILER="javac"
-JAVA_VM="java"
-
-#JIDE Project vars
-JIDE_PROJECT_HOME=
-JIDE_PROJECT_CONFIG_DIR=".jide"
-JIDE_PROJECT_CONFIG_FILE="jide.config"
-JIDE_PROJECT_SRCDIR="src"
-JIDE_PROJECT_CLASSDIR="classes"
-JIDE_PROJECT_NAME="name"
-JIDE_PROJECT_DESC="desc"
-JIDE_PROJECT_CTIME="ctime"
-JIDE_PROJECT_AUTHOR="author"
-JIDE_PROJECT_MAIN_CLASSES="main_classes"
-JIDE_PROJECT_JAVA_SOURCES="sources"
-################################ 
-
 
 ### IMPORT MODELES         ###
 import() 
 {
 	local LIB=$JIDE_HOME/$JIDE_LIBDIR/$1.sh
-	[ -f $LIB ] && source $LIB || exit 1 
+	[ -f $LIB ] && source $LIB || (echo "JIDE import: $LIB not found!"; exit 1) 
 }
 
 import fs
+import utils
 import java_utils
+
 import jide-common
 import jide-config
 import jide-init

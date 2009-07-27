@@ -31,6 +31,8 @@ clean_path()
 	FILEPATH=$(echo "$FILEPATH" | awk '{gsub("//*","/"); print}')	
 #	echo "4. $FILEPATH" > /dev/stderr
 
+	FILEPATH=$(echo "$FILEPATH" | awk '{gsub("/.$",""); print}')	
+
 	FILEPATH=$(echo "$FILEPATH" | awk '
 		{ FILE=$0;
 		  while(gsub("\\/[^/]*\\/\\.\\.", "", $FILE)>0) {} 
@@ -67,12 +69,11 @@ is_relative_path()
 # This function converts a relative path to an absolute path
 get_absolute_path() 
 {
-	[ -z "$1" ] && return 1
+	[ -z "$1" ] && echo "$PWD" && return
 	
 	local FILEPATH
 	FILEPATH="$(clean_path "$1")"
 	if is_relative_path "$FILEPATH"; then
-		#FILEPATH="${PWD}/$FILEPATH"
 		FILEPATH="$(clean_path "${PWD}/$FILEPATH")"	
 	fi
 	
@@ -82,15 +83,20 @@ get_absolute_path()
 # This function converts a relative path to an absolute path
 get_relative_path() 
 {
-	[ -z "$1" ] && return 1
+	[ -z "$1" ] && echo "." && return
 	
 	local FILEPATH
 	FILEPATH="$(clean_path "$1")"
 	if is_absolute_path "$FILEPATH"; then
-		FILEPATH="${FILEPATH#$PWD/}"	
+		FILEPATH="${FILEPATH#$PWD/}"
+		FILEPATH="${FILEPATH#$PWD}"
 	fi
 	
-	echo "$FILEPATH"
+	if [ -n "$FILEPATH" ]; then
+		echo "$FILEPATH"
+	else
+		echo "."
+	fi
 }
 
 is_filename_with_extention()

@@ -31,11 +31,9 @@ jide_help_compile()
 
 jide_compile() 
 {
-	#TODO
-	echo "COMMAND='compile'"
-	echo "ARGS=$*"
-	
 	cd $JIDE_PROJECT_HOME
+	
+	__jide_is_project_dir || exit 1
 
 	if [ $# -ne 0 ]; then
 
@@ -56,60 +54,32 @@ jide_compile()
 			esac
 		done	
 	fi
-	
-	if [ ! -d $JIDE_PROJECT_CLASSDIR ]; then
-		echo "Create classes dir: $JIDE_PROJECT_CLASSDIR"
-		mkdir $JIDE_PROJECT_CLASSDIR
-	fi
 
-	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES 2> /dev/null
-	touch $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVE_SOURCES
-	rm -r $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES 2> /dev/null
-	mkdir $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
-	
-	local JDIRS="$(ls -R $JIDE_PROJECT_SRCDIR | grep : | cut -d: -f1)"
-	local JFILES=""
-	
-	echo $JDIRS
-	
-	for dir in $JDIRS; do
-		JFILES="$JFILES $(ls $dir/*.java 2>/dev/null)"
-	done
-
-	#echo -e $JFILES
-	
-	local cf=0
-	local mf=0
-	local classname
+	__jide_clean_project
+		
+	local compiled_class_num=0
+	local mainclass_num=0
+	local JFILES="$(__jide_get_source_files)"
 	
 	if [ -n "$JFILES" ]; then
 		for jfile in $JFILES; do
-			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
-			
-			cfile=$(get_java_classfile $jfile $JIDE_PROJECT_CLASSDIR)
-			if is_java_mainclass "$jfile"; then
-				#echo "Trovato main in $jfile"
-				classname=$(get_java_classname $jfile) 
 
-				(
-					cd $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES
-					echo $mf > $classname
-					ln -sf $classname $mf
-				)
-				let mf=$mf+1
+			if java_compile "$jfile" "$JIDE_PROJECT_CLASSDIR"; then
+				let compiled_class_num=$compiled_class_num+1
 			fi
 			
-			if [ ! -f "$cfile" ] || [ $(get_file_modify_time $jfile) -gt $(get_file_modify_time $cfile) ]; then
-				echo "Compile: $jfile --> $cfile"
-				$JAVA_COMPILER -sourcepath $JIDE_PROJECT_SRCDIR -d $JIDE_PROJECT_CLASSDIR $jfile
-				let cf=$cf+1
+			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
+
+			if __jide_process_mainclass "$jfile" $mainclass_num; then
+				let mainclass_num=$mainclass_num+1
 			fi
 		done
 	else 
 		echo "No found java source files"
 	fi
 
-	printf "Compiled %d files\n" $cf
+	printf "Compiled %d files\n"    $compiled_class_num
+	printf "Main class found: %d\n" $mainclass_num
 
 	exit $?
 }

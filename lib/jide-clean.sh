@@ -29,8 +29,12 @@ jide_help_clean()
 
 jide_clean() 
 {
-	#TODO
-	echo "COMMAND='clean'"
-	echo "ARGS=$*"
+	cd $JIDE_PROJECT_HOME
+	
+	__jide_is_project_dir || exit 1
+	
+	__jide_project_clean
+	__jide_project_clean_sourcedir
+	__jide_project_clean_classdir
 }
 

@@ -107,3 +107,33 @@ is_java_mainclass() # arg: javafile
 	cat "$1" | grep -q -e "static.*void *main *(.*)"
 }
 
+java_compile() # arg: javafile [classdir]
+{
+	test -z "$1"        && return 1 # No input
+	! is_java_file "$1" && return 2 # No java file (*.java)
+
+
+	local JAVA_FILE="$(get_relative_path "$1")"
+	local CLASS_DIR="$(get_relative_path "$2")"
+	local CLASS_DIR_OPT=""
+	
+	if [ -n "$CLASS_DIR" ] && [ ! -d "$CLASS_DIR" ]; then
+		echo "Create classes dir: $CLASS_DIR"
+		mkdir -p "$CLASS_DIR"
+		CLASS_DIR_OPT="-d"
+	fi
+
+	local CLASS_FILE="$(get_java_classfile "$JAVA_FILE" "$CLASS_DIR")"
+	
+	if [ ! -f "$CLASS_FILE" ] || \
+	   [ $(get_file_modify_time "$CLASS_FILE") -gt $(get_file_modify_time "$CLASS_FILE") ]
+	then
+		echo "Compile: $JAVA_FILE --> $(get_relative_path "$CLASS_FILE")"	
+		eval ${JAVA_COMPILER:-javac} $CLASS_DIR_OPT "$CLASS_DIR" "$JAVA_FILE"
+	else
+		echo "Compile: $JAVA_FILE already compiled"
+		return 1
+	fi
+}
+
+

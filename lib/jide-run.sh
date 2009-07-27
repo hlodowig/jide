@@ -29,58 +29,14 @@ jide_help_run()
 	echo "$JIDE_PROGNAME compile [-n|--name <project_name>] [-d|--description <project_description>] [-s | --sourcepath <path>] [-c | --classpath <path>] [-f|--force]"
 }
 
-__jide_get_prog() 
-{
-    ! test -e $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1 && return 1
-
-	case $1 in
-		*[!0-9]*) echo $1;;
-		*) readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1;;
-	esac
-}
-
-__jide_run() 
-{
-	[ -z "$1" ] && return
-	 
-	local prog=$(__jide_get_prog "$1")
-	
-	if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
-		echo "JIDE Run program: $prog"
-		echo
-		$JAVA_VM -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
-	else
-		print_error "Program not found!"		
-	fi
-}
-
-__jide_get_main_classes_links() 
-{
-	ls -1 $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | grep -e "^[0-9][0-9]*$"| sort -n
-}
-
-__jide_get_main_classes_number() 
-{
-	__jide_get_main_classes_links | wc -l | cut -d' ' -f1
-}
-
-__jide_print_main_classes() 
-{
-	local mp_links="$(__jide_get_main_classes_links)"
-	local mp_num=$(__jide_get_main_classes_number)
-	local mp_cifre=${#mp_num}
-	echo "[*] Project Main class: $mp_num"
-	for mp in $mp_links; do
-		printf "    [%${mp_cifre}d] %s\n" $mp $(readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$mp)
-	done
-}
-
 jide_run() 
 {
 #	echo "COMMAND='run'"
 #	echo "ARGS=$*"
 
 	cd $JIDE_PROJECT_HOME
+	
+	__jide_is_project_dir || exit 1
 	
 	if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
 		echo "JIDE: Not project directory"
