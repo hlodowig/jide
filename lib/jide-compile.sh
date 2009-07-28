@@ -31,10 +31,6 @@ jide_help_compile()
 
 jide_compile() 
 {
-	cd $JIDE_PROJECT_HOME
-	
-	__jide_is_project_dir || exit 1
-
 	if [ $# -ne 0 ]; then
 
 		# Si raccoglie la stringa generata da getopt.
@@ -55,32 +51,44 @@ jide_compile()
 		done	
 	fi
 
-	__jide_clean_project
-		
-	local compiled_class_num=0
-	local mainclass_num=0
-	local JFILES="$(__jide_get_source_files)"
 	
-	if [ -n "$JFILES" ]; then
-		for jfile in $JFILES; do
+	if [ -n "$*" ]; then
+		__jide_compile $*
+	else
+		cd ${JIDE_PROJECT_HOME:=$PWD}
+		
+		__jide_is_project_dir || exit 1		
 
-			if java_compile "$jfile" "$JIDE_PROJECT_CLASSDIR"; then
-				let compiled_class_num=$compiled_class_num+1
-			fi
+		__jide_project_clean
+
+		local compiled_class_num=0
+		local mainclass_num=0
+		local JFILES="$(__jide_get_source_files)"
+	
+		if [ -n "$JFILES" ]; then
+			for jfile in $JFILES; do
+
+				if java_compile "$jfile" "$JIDE_PROJECT_CLASSDIR"; then
+					let compiled_class_num=$compiled_class_num+1
+				else
+					print_error "JIDE: Errore di compilazione"
+					return 1
+				fi
 			
-			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
+				echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
 
-			if __jide_mainclass_set "$jfile" $mainclass_num; then
-				let mainclass_num=$mainclass_num+1
-			fi
-		done
-	else 
-		echo "No found java source files"
+				if __jide_mainclass_set "$jfile" $mainclass_num; then
+					let mainclass_num=$mainclass_num+1
+				fi
+			done
+		else 
+			echo "No found java source files"
+		fi
+
+		printf "Compiled %d files\n"    $compiled_class_num
+		printf "Main class found: %d\n" $mainclass_num
 	fi
-
-	printf "Compiled %d files\n"    $compiled_class_num
-	printf "Main class found: %d\n" $mainclass_num
-
+	
 	exit $?
 }
 

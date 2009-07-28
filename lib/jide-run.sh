@@ -34,24 +34,24 @@ jide_run()
 #	echo "COMMAND='run'"
 #	echo "ARGS=$*"
 
-	cd $JIDE_PROJECT_HOME
+	#cd $JIDE_PROJECT_HOME
 	
-	__jide_is_project_dir || exit 1
+	#__jide_is_project_dir || exit 1
 	
-	if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
-		echo "JIDE: Not project directory"
-		exit -1
-	fi
+	#if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
+	#	echo "JIDE: Not project directory"
+	#	exit -1
+	#fi
 
-	if [ ! -d $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
-		echo "Project not compiled"
-		exit -1
-	else
-		if [ -z "$(ls $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES)" ]; then
-			echo "There are not main class in this project"
-			exit -1		
-		fi	
-	fi
+	#if [ ! -d $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
+	#	echo "Project not compiled"
+	#	exit -1
+	#else
+	#	if [ -z "$(ls $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES)" ]; then
+	#		echo "There are not main class in this project"
+	#		exit -1		
+	#	fi	
+	#fi
 
 	if [ -z "$*" ]; then
 		__jide_mainclass_print_main_list

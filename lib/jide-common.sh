@@ -241,16 +241,26 @@ __jide_project_clean_classdir()
 
 __jide_mainclass_get() 
 {
-	(
-		cd ${JIDE_PROJECT_HOME:-$PWD}
+	[ -z "$1" ] && return 1
+	
+
+	if is_java_mainclass "$1"; then
+		get_java_classname "$1"
+	else
+		(
+		cd ${JIDE_PROJECT_HOME:=$PWD}
 
 		! test -e $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1 && return 1
 
-		case $1 in
-			*[!0-9]*) echo $1;;
-			*) readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1;;
+		case "$1" in
+			*[!0-9]*) echo "$1";;
+			*) readlink "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1";;
 		esac
-	)
+		)
+	fi
+	
+	cd $JIDE_PROJECT_HOME
+
 }
 
 __jide_mainclass_get_links() 
@@ -446,45 +456,58 @@ __jide_mainclass_set()
 
 __jide_mainclass_run() 
 {
-	[ -z "$1" ] && return
+	[ -z "$1" ] && return 1
 	 
 	local prog=$(__jide_mainclass_get "$1")
 	
-	if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
-		echo "JIDE Run program: $prog"
-		echo
-		$JAVA_VM -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
-	else
-		print_error "Program not found!"		
+	if	__jide_is_project_javafile "$1" && is_java_mainclass "$1"; then
+		JIDE_PROJECT_HOME="$(__jide_get_project_home_from_javafile "$1")"
 	fi
+	
+	(		
+		cd ${JIDE_PROJECT_HOME:=$PWD}
+		
+		if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
+			echo "JIDE Run program: $prog"
+			echo
+			$JAVA_VM -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"
+		else
+			print_error "Program not found!"		
+		fi
+	)
 }
 
-__jide_compile_javafile() #
+__jide_compile() # args: java files
 {
-	test -z "$1"        && return 1 # No mainclass
-	test -z "$2"        && return 2 # No mainclass id
+	test -z "$1" && return 1 # No mainclass
 	
-	local PRJ_DIR="$(__jide_get_project_home_from_javafile "$1")"
+	for jfile in $*; do
 	
-	test -z "$PRJ_DIR" && return 3 # No javafile of JIDE project
+		if is_java_file $jfile; then
+		
+			local PRJ_DIR="$(__jide_get_project_home_from_javafile "$1")"
 	
-	JIDE_PROJECT_HOME="$PRJ_DIR"
+			test -z "$PRJ_DIR" && return 3 # No javafile of JIDE project
 	
-	local SRCDIR="$(__jide_get_project_source_dir)"
-	local CLASSDIR="$(__jide_get_project_class_dir)"
+			JIDE_PROJECT_HOME="$PRJ_DIR"
 	
-	if java_compile "$1" "$CLASSDIR"; then
+			local SRCDIR="$(__jide_get_project_source_dir)"
+			local CLASSDIR="$(__jide_get_project_class_dir)"
 	
-		if ! is_file $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES; then
-			echo $jfile > $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
-		else
-			if ! cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES | grep -q "$jfile"; then
-				echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES			
-			fi
-		fi
+			if java_compile "$jfile" "$CLASSDIR"; then
 	
-		__jide_mainclass_set "$jfile"
-	fi	
+				if ! is_file $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES; then
+					echo "$jfile" > $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
+				else
+					if ! cat $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES | grep -q "$jfile"; then
+						echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES			
+					fi
+				fi
+	
+			fi	
+			__jide_mainclass_set "$jfile"
+		fi	
+	done
 }
 
 

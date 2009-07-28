@@ -36,8 +36,13 @@ get_java_root_source_path() # arg: javafile
 	
 	local SRC="$PWD"
 	
-	if [ -n "$PACKAGE" ]; then 
-		SRC="$PWD/$(get_dirname "$1")"
+	if [ -n "$PACKAGE" ]; then
+		
+		SRC="$(get_dirname "$1")"
+		if is_relative_path "$SRC"; then
+			SRC="$PWD/$SRC"
+		fi
+		
 		SRC="$(clean_path "$SRC")"
 		if echo "$SRC" | grep -q -e "$PACKAGE$"; then
 			SRC="${SRC%$PACKAGE}"
@@ -117,9 +122,11 @@ java_compile() # arg: javafile [classdir]
 	local CLASS_DIR="$(get_relative_path "$2")"
 	local CLASS_DIR_OPT=""
 	
-	if [ -n "$CLASS_DIR" ] && [ ! -d "$CLASS_DIR" ]; then
-		echo "Create classes dir: $CLASS_DIR"
-		mkdir -p "$CLASS_DIR"
+	if [ -n "$CLASS_DIR" ]; then
+		if [ ! -d "$CLASS_DIR" ]; then
+			echo "Create classes dir: $CLASS_DIR"
+			mkdir -p "$CLASS_DIR"
+		fi
 		CLASS_DIR_OPT="-d"
 	fi
 
