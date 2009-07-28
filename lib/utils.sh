@@ -67,3 +67,9 @@ get_boolean()
 	return 1	
 }
 
+is_program_installed()
+{
+	which $1 > /dev/null 2> /dev/null
+	return $?
+}
+

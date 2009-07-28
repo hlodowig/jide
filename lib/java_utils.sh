@@ -115,8 +115,11 @@ is_java_mainclass() # arg: javafile
 java_compile() # arg: javafile [classdir]
 {
 	test -z "$1"        && return 1 # No input
-	! is_java_file "$1" && return 2 # No java file (*.java)
-
+	
+	if ! is_java_file "$1"; then
+		echo "Java compile: '$1' isn't java file"
+		return 2 # No java file (*.java)
+	fi
 
 	local JAVA_FILE="$(get_relative_path "$1")"
 	local CLASS_DIR="$(get_relative_path "$2")"

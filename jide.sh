@@ -105,8 +105,8 @@ jide_main() {
 	while true; do
 		case $1 in
 			-?|-h|--help|help) HELP=1; shift;;
-			-c|--config) CONFIGFILE=$2; shift 2;;
-			-p|--project) JIDE_PROJECT_HOME=$2; shift 2;;
+			-C|--config) CONFIGFILE=$2; shift 2;;
+			-p|--project) JIDE_PROJECT_HOME="$2"; shift 2;;
 			init|compile|run|clean|delete|info|archive) CMD=$1; shift; ARGS=$*; break;;
 			"") break;;
 			*) echo print_error "Unknown Command: $1"; exit 1;;

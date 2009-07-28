@@ -55,12 +55,17 @@ jide_config()
 		             "/usr/local/etc/jide/$JIDE_CONFIG_FILE"
 		do
 			if [ -f "$cfile" ]; then
-				echo "Configuration file: $cfile"	
+				#echo "Configuration file: $cfile"	
+				#echo
 				source $cfile
 				break
 			fi
 		done
 	fi
+	
+	
+	#test $JIDE_GUI -eq 1 && ! is_program_installed zenity && JIDE_GUI=0
+	#echo "GUI=$JIDE_GUI"
 	
 #	cd $JIDE_PROJECT_HOME
 #

@@ -34,16 +34,19 @@ jide_compile()
 	if [ $# -ne 0 ]; then
 
 		# Si raccoglie la stringa generata da getopt.
-		local ARGS=$(getopt -o ?hs:c: -l sourcepath:,classpath:,help  -- "$@" 2> /dev/null)
+		local ARGS=$(getopt -o ?hDs:c: -l sourcepath:,project-discovery,classpath:,help  -- "$@" 2> /dev/null)
 
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
-
+	
+		local ALL=0
+		local JFILES=${*%--}
 
 		while true ; do
 			case "$1" in
 				-s|--sourcepath) JIDE_PROJECT_SRCDIR=$2;   shift 2;;
 				-c|--classpath)  JIDE_PROJECT_CLASSDIR=$2; shift 2;;
+				-D|--project-discovery) ALL=1;shift;;
 				--) shift; break;;
 				-h|-?|--help) jide_help_compile; exit 0;;
 				*) shift;;
@@ -52,9 +55,21 @@ jide_compile()
 	fi
 
 	
-	if [ -n "$*" ]; then
-		__jide_compile $*
+	if [ -n "$1" ] && [ $ALL -eq 1 ]; then 
+		local ROOT="$(__jide_get_project_home_from_javafile "$1")"
+		if [ -n "$ROOT" ]; then
+			JIDE_PROJECT_HOME="$ROOT"		
+		fi
+		
+		JFILES=""
+	fi
+	
+	#(
+	if [ -n "$JFILES" ]; then
+		echo "Compila i file: $JFILES"
+		__jide_compile $JFILES
 	else
+		echo "Compila tutto il progetto"
 		cd ${JIDE_PROJECT_HOME:=$PWD}
 		
 		__jide_is_project_dir || exit 1		
@@ -70,9 +85,6 @@ jide_compile()
 
 				if java_compile "$jfile" "$JIDE_PROJECT_CLASSDIR"; then
 					let compiled_class_num=$compiled_class_num+1
-				else
-					print_error "JIDE: Errore di compilazione"
-					return 1
 				fi
 			
 				echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
@@ -88,6 +100,7 @@ jide_compile()
 		printf "Compiled %d files\n"    $compiled_class_num
 		printf "Main class found: %d\n" $mainclass_num
 	fi
+	#) | zenity --progress --pulsate --auto-close --text="Compilazione in corso..."
 	
 	exit $?
 }
