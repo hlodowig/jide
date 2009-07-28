@@ -70,7 +70,7 @@ jide_compile()
 			
 			echo $jfile >> $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_JAVA_SOURCES
 
-			if __jide_process_mainclass "$jfile" $mainclass_num; then
+			if __jide_mainclass_set "$jfile" $mainclass_num; then
 				let mainclass_num=$mainclass_num+1
 			fi
 		done

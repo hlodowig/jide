@@ -209,16 +209,6 @@ __jide_get_source_files()
 	echo $src_java_files
 }
 
-__jide_get_prog() 
-{
-    ! test -e $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1 && return 1
-
-	case $1 in
-		*[!0-9]*) echo $1;;
-		*) readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1;;
-	esac
-}
-
 __jide_project_configure()
 {
 	#TODO
@@ -248,11 +238,217 @@ __jide_project_clean_classdir()
 	done
 }
 
-__jide_run() 
+
+__jide_mainclass_get() 
+{
+	(
+		cd ${JIDE_PROJECT_HOME:-$PWD}
+
+		! test -e $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1 && return 1
+
+		case $1 in
+			*[!0-9]*) echo $1;;
+			*) readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$1;;
+		esac
+	)
+}
+
+__jide_mainclass_get_links() 
+{
+	(
+		cd ${JIDE_PROJECT_HOME:=$PWD}
+		ls -1 $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | grep -e "^[0-9][0-9]*$"| sort -n
+	)
+}
+
+__jide_mainclass_number()
+{
+	__jide_mainclass_get_links | wc -l | cut -d' ' -f1
+}
+
+__jide_mainclass_print_list() 
+{
+	(
+	cd ${JIDE_PROJECT_HOME:=$PWD}
+
+	local mp_links="$(__jide_mainclass_get_links)"
+	local mp_num=$(__jide_mainclass_number)
+	local mp_cifre=${#mp_num}
+	echo "[*] Project Main class: $mp_num"
+	for mp in $mp_links; do
+		printf "    [%${mp_cifre}d] %s\n" $mp $(readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$mp)
+	done
+	)
+}
+
+
+__jide_mainclass_find_new_id()
+{
+	local mainclass_id=0
+	
+	mc_id_list="$(__jide_mainclass_get_links)"
+	
+	if [ -n "$mc_id_list" ]; then 
+		for id in $mc_id_list; do
+			if [ $mainclass_id -eq $id ]; then
+				let mainclass_id=$mainclass_id+1
+			fi
+		done
+	fi
+	
+	echo $mainclass_id
+}
+
+__jide_mainclass_set() 
+{
+	test -z "$1"        && return 1 # No mainclass
+	#test -z "$2"        && return 2 # No mainclass id
+	
+	! is_java_file "$1" && return 3 # No java file (*.java)
+
+	local jfile="$1"
+	local mainclass_id
+	local classname
+	local mc_name
+	
+	if is_java_mainclass "$jfile"; then
+	
+		#echo "Trovato main in $jfile"
+		classname=$(get_java_classname $jfile) 
+		
+		(
+			echo "Mainclass source file='$jfile'"		
+			echo "Mainclass classname='$classname'"
+			
+			cd ${JIDE_PROJECT_HOME:=$PWD}
+			! __jide_is_project_dir && (echo "Non è un JIDE project dir";return 1)
+
+			if ! is_directory "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES"
+			then
+				echo "Make dir: $JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES"
+				mkdir "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES" || return 1
+			fi
+		
+			cd "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES"
+			
+			if [ -n "$2" ]; then
+				echo "ID=$2 passato come parametro"
+
+				mainclass_id=$2
+			
+				if [ -f $classname ]; then
+					echo "### Mainclass '$classname' esiste gia'"
+
+					local mc_id=$(cat "$classname")
+					if [ $mainclass_id -ne $mc_id ]; then					
+						echo $mainclass_id > $classname
+
+						echo "Mainclass '$classname' rimuovi il vecchio link id=$mc_id"
+						rm $mc_id
+					else
+						echo "Mainclass '$classname' con stesso id=$2"
+						echo "Non fare nulla"
+
+						return 0				
+					fi
+				else
+					echo $mainclass_id > $classname				
+				fi
+				
+				
+				if [ -e "$mainclass_id" ]; then
+					echo "Mainclass ID=$2 esiste gia'"
+			
+					mc_name="$(__jide_mainclass_get $mainclass_id)"
+				
+					echo "$mainclass_id --> $mc_name"
+				
+					if [ "$classname" != "$mc_name" ]; then
+
+						echo "Mainclass ID=$2 punta a una classe diversa da'$classname': '$mc_name'"
+				
+						echo -n "'$mc_name' verra' spostata..."
+					
+						local mc_new_id=$(__jide_mainclass_find_new_id)
+						echo "il nuovo id e' $mc_new_id"
+						
+						echo $mc_new_id > $mc_name
+						ln -sf $mc_name $mc_new_id
+					else
+						echo "Mainclass ID=$2 punta alla stessa classe '$classname'"
+						echo "non fare nulla!"
+					fi
+				fi
+
+				echo "Mainclass '$classname': crea link $mainclass_id"
+				ln -sf $classname $mainclass_id
+
+			else # mainclass id non specificato
+				echo "Mainclass ID non specificato"
+				if [ ! -f "$classname" ]; then
+					echo -n "Trova il primo Mainclass ID disponibile..."
+					mainclass_id=$(__jide_mainclass_find_new_id)
+					echo $mainclass_id
+					echo $mainclass_id > $classname				
+
+					echo "Mainclass '$classname': crea link $mainclass_id"
+					ln -sf $classname $mainclass_id
+				else
+					echo "La main classe '$classname' gia' esiste"
+					mainclass_id=$(cat "$classname")
+				
+					echo "Main class ID=$mainclass_id"
+				
+					if [ -z "$mainclass_id" ]; then
+						echo "ma il contenuto è nullo"
+						mainclass_id=$(__jide_mainclass_find_new_id)
+						echo $mainclass_id > $classname
+					fi
+				
+					if [ ! -e $mainclass_id ]; then
+						echo "ma non esiste il link provvedo a crealo (ID=$mainclass_id)"
+						ln -sf $classname $mainclass_id
+					else
+						mc_name="$(__jide_mainclass_get $mainclass_id)"
+				
+						echo "$mainclass_id --> $mc_name"
+				
+						if [ "$classname" != "$mc_name" ]; then
+
+							echo "Mainclass ID=$mainclass_id punta a una classe diversa da'$classname': '$mc_name'"
+				
+							echo "'$classname' verra' spostata..."
+					
+							mainclass_id=$(__jide_mainclass_find_new_id)
+
+							echo "Mainclass '$classname': crea link $mainclass_id"
+							echo $mainclass_id > $classname
+							ln -sf $classname $mainclass_id
+						else
+							echo "Mainclass ID=$mainclass_id punta alla stessa classe '$classname'"
+							echo "non fare nulla!"
+						fi
+					
+					fi
+				fi
+			fi
+		)
+		
+		__jide_mainclass_print_list
+
+		return 0
+	else
+		echo "Class '$classname': no mainclass"
+	fi
+	
+	return 1
+}
+
+__jide_mainclass_run() 
 {
 	[ -z "$1" ] && return
 	 
-	local prog=$(__jide_get_prog "$1")
+	local prog=$(__jide_mainclass_get "$1")
 	
 	if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
 		echo "JIDE Run program: $prog"
@@ -261,56 +457,6 @@ __jide_run()
 	else
 		print_error "Program not found!"		
 	fi
-}
-
-__jide_process_mainclass() 
-{
-	test -z "$1"        && return 1 # No mainclass
-	test -z "$2"        && return 2 # No mainclass id
-	
-	! is_java_file "$1" && return 3 # No java file (*.java)
-
-	local jfile="$1"
-	local mainclass_id=$2
-	local classname
-	
-	if is_java_mainclass "$jfile"; then
-	
-		! is_directory "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES" &&
-		mkdir "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES"
-
-		#echo "Trovato main in $jfile"
-		classname=$(get_java_classname $jfile) 
-		(
-			cd "$JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES"
-			echo $mainclass_id > $classname
-			ln -sf $classname $mainclass_id
-		)
-		return 0
-	fi
-	
-	return 1
-}
-
-__jide_get_main_classes_links() 
-{
-	ls -1 $JIDE_PROJECT_HOME/$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES | grep -e "^[0-9][0-9]*$"| sort -n
-}
-
-__jide_get_main_classes_number() 
-{
-	__jide_get_main_classes_links | wc -l | cut -d' ' -f1
-}
-
-__jide_print_main_classes() 
-{
-	local mp_links="$(__jide_get_main_classes_links)"
-	local mp_num=$(__jide_get_main_classes_number)
-	local mp_cifre=${#mp_num}
-	echo "[*] Project Main class: $mp_num"
-	for mp in $mp_links; do
-		printf "    [%${mp_cifre}d] %s\n" $mp $(readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES/$mp)
-	done
 }
 
 __jide_compile_javafile() #
@@ -337,9 +483,11 @@ __jide_compile_javafile() #
 			fi
 		fi
 	
-		__jide_process_mainclass "$jfile"
+		__jide_mainclass_set "$jfile"
 	fi	
 }
+
+
 
 
 ### END COMMON FUNCTION  ###

@@ -54,12 +54,12 @@ jide_run()
 	fi
 
 	if [ -z "$*" ]; then
-		__jide_print_main_classes
+		__jide_mainclass_print_main_list
 		exit 0
 	fi
 	
 	for prog in $*; do
-		__jide_run $prog
+		__jide_mainclass_run $prog
 	done
 	
 	exit $?
