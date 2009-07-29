@@ -55,24 +55,26 @@ JIDE_LIBDIR="lib"
 ### IMPORT MODELES         ###
 import() 
 {
-	local LIB=$JIDE_HOME/$JIDE_LIBDIR/$1.sh
+	local LIB=$JIDE_HOME/$JIDE_LIBDIR/$(echo $1 | tr . /).sh
 	[ -f $LIB ] && source $LIB || (echo "JIDE import: $LIB not found!"; exit 1) 
 }
 
-import fs
-import utils
-import java_utils
 
-import jide-common
-import jide-config
-import jide-init
-import jide-info
-import jide-compile
-import jide-run
-import jide-clean
-import jide-delete
-import jide-archive
-import jide-help
+import utils.common-utils
+import utils.fs-utils
+import utils.array-utils
+import utils.java-utils
+
+import jide.jide-common
+import jide.jide-config
+import jide.jide-init
+import jide.jide-info
+import jide.jide-compile
+import jide.jide-run
+import jide.jide-clean
+import jide.jide-delete
+import jide.jide-archive
+import jide.jide-help
 
 jide_usage() 
 {

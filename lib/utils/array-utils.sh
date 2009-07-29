@@ -1,0 +1,83 @@
+
+# Init array with value 
+array_init() # Args: <array_name> <arg1> ...
+{
+	[ -z "$1" ] && return 1
+	
+	local ARRAY_NAME=$1
+	eval "$ARRAY_NAME=()"
+	shift
+	
+	local i=0
+	while [ -n "$1" ]; do
+		eval "$ARRAY_NAME[$i]=\"$1\""
+		shift
+		let i=$i+1
+	done
+}
+
+# Clean array
+array_clean() # Args: <array_name> <arg1> ...
+{
+	[ -z "$1" ] && return 1	
+	eval "$1=()"
+}
+
+
+# Copy array 1 into array 2
+array_copy() # Args: <array1_name> <array_name2>
+{
+	[ $# -lt 2 ] && return 1
+	
+	eval "$2=(\${$1[@]})"
+}
+
+# Compact array positions
+array_compact() # Args: <array_name>
+{
+	[ -z "$1" ] && return 1
+	
+	local ARRAY_TMP=()
+	local ARRAY_NAME=$1
+	local OUT=""
+	local i=0
+	local elem_num=0
+	
+	eval local ARRAY_SIZE="\${#$ARRAY_NAME[@]}"
+
+	while [ $elem_num -lt $ARRAY_SIZE ]; do
+		eval ARG="\${$ARRAY_NAME[$i]}"
+		while [ -z "$ARG" ]; do
+			let i=$i+1		
+			eval ARG="\${$ARRAY_NAME[$i]}"
+		done
+
+		eval ARRAY_TMP[$elem_num]=\${$ARRAY_NAME[$i]}
+		let elem_num=$elem_num+1
+		let i=$i+1
+	done
+	
+	array_copy ARRAY_TMP $ARRAY_NAME
+}
+
+array_to_quoting_string()
+{
+	local ARRAY_NAME=$1
+	local OUT=""
+	local i=0
+	local elem_num=0
+	
+	eval local ARRAY_SIZE="\${#$ARRAY_NAME[@]}"
+
+	while [ $elem_num -lt $ARRAY_SIZE ]; do
+		eval ARG="\${$ARRAY_NAME[$i]}"
+		if [ -n "$ARG" ]; then
+			OUT="$OUT \"$ARG\""
+			let elem_num=$elem_num+1
+		fi
+		let i=$i+1
+	done
+	
+	echo $OUT
+}
+

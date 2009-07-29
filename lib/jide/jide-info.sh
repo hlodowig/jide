@@ -132,6 +132,7 @@ jide_info()
 				-p|--project) 
 					if [ -$ALL -eq 0 ]; then
 						ROOT="$2"
+						echo "ROOT=$ROOT"
 					else
 						echo "Non posso settare la home directory del progetto"
 						echo "Questa opzione va in conflitto con --project-discovery"
@@ -170,7 +171,8 @@ jide_info()
 	fi
 
 	cd 	${JIDE_PROJECT_HOME:=$PWD}
-	__jide_is_project_dir || exit 1
+	ls
+	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 
 	if [ -n "$CONFIGFILE" ]; then
 		jide_config $CONFIGFILE

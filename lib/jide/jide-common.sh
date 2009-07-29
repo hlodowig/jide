@@ -49,7 +49,19 @@ JIDE_PROJECT_JAVA_SOURCES="sources"
 ################################  
 
 ### COMMON FUNCTION ### 
- 
+
+__jide_remove_param() # args: option value string
+{
+	[ $# -lt 3 ] && return 1;
+		
+	local OPT="$1"
+	local ARG="$2"
+	shift 2
+	local ARGS="$*"
+	
+	echo $* | awk -v OPT="$OPT" -v ARG="$ARG" '{ gsub(OPT"( *|=)"ARG,""); print}'
+}
+
 __jide_project_get_property() 
 {
 
@@ -183,14 +195,15 @@ __jide_is_project_javafile()
 __jide_is_project_dir()
 {
 	local PRJ_DIR
+	
 	if [ -n "$1" ]; then
 		PRJ_DIR="$1"
 	else
-		PRJ_DIR=${JIDE_PROJECT_HOME:-"."}
+		PRJ_DIR=${JIDE_PROJECT_HOME:-$PWD}
 	fi
 	
-	if [ ! -d $PRJ_DIR/$JIDE_PROJECT_CONFIG_DIR ]; then
-		echo "JIDE: This directory isn't a JIDE Project"
+	if [ ! -d "$PRJ_DIR/$JIDE_PROJECT_CONFIG_DIR" ]; then
+		echo "JIDE: The directory '$PRJ_DIR' isn't a JIDE Project"
 		echo "      If you want make a project execute:"
 		echo "      $JIDE_PROGNAME init <option>"
 		return 1
