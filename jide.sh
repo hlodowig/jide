@@ -35,6 +35,7 @@ JIDE_SCRIPT="$0"
 JIDE_PROGNAME=$(basename "$JIDE_SCRIPT")
 JIDE_CMD=
 JIDE_CONFIGFILE=""
+JIDE_ARGS=()
 
 # Se lo script è un link di tipo '<progname>-<command>' 
 # esegui: '<real progname> <command>' 
@@ -51,10 +52,10 @@ if [ -L "$JIDE_SCRIPT" ]; then
 	fi
 fi
 	
+
 JIDE_HOME=$(dirname $JIDE_SCRIPT)
 JIDE_LIBDIR="lib"
 
-### IMPORT MODELES         ###
 import() 
 {
 	local LIB=$JIDE_HOME/$JIDE_LIBDIR/$(echo $1 | tr . /).sh
@@ -66,7 +67,7 @@ import()
 	fi
 }
 
-
+##### IMPORT MODULES #####
 import utils.common-utils
 import utils.fs-utils
 import utils.array-utils
@@ -81,16 +82,7 @@ import jide.jide-run
 import jide.jide-clean
 import jide.jide-delete
 import jide.jide-archive
-
-
-JIDE_ARGS=()
-i=0
-while [ -n "$1" ]
-do
-	JIDE_ARGS[$i]="$1"
-	let i=$i+1
-	shift
-done
+##########################
 
 jide_usage() 
 {
@@ -168,8 +160,8 @@ jide_parse_main_options()
 	fi
 }
 
-jide_main() {
-
+jide_main() 
+{
 	# Se al programma non vengono passati argomenti visualizza la stampa di 
 	# utilizzo ed esci
 	if [ ${#JIDE_ARGS[*]} -eq 0 ]; then
@@ -200,5 +192,14 @@ jide_main() {
 ### END COMMANDS SECTION ###
 
 ### MAIN PROGRAM         ###
+
+i=0
+while [ -n "$1" ]
+do
+	JIDE_ARGS[$i]="$1"
+	let i=$i+1
+	shift
+done
+
 jide_main $*
 
