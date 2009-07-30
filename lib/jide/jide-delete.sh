@@ -37,7 +37,7 @@ jide_delete()
 	__jide_is_project_dir || exit 1
 		
 	__jide_project_clean_sourcedir
-	rm "$JIDE_PROJECT_SRCDIR/.jide-src" 2> /dev/null
+	rm "$JIDE_PROJECT_SRCDIR/.jide-project" 2> /dev/null
 	__jide_project_clean_classdir
 	rm -r $JIDE_PROJECT_CONFIG_DIR
 

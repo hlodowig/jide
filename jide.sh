@@ -73,7 +73,7 @@ import utils.fs-utils     #
 import utils.array-utils  #
 import utils.java-utils   #
                           #
-import jide.jide-common   #
+import jide.jide-core     #
 import jide.jide-config   #
 import jide.jide-init     #
 import jide.jide-info     #

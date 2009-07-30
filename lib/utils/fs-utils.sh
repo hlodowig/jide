@@ -7,6 +7,10 @@ is_directory() {
 	test -d "$1"
 }
 
+is_link() {
+	test -L "$1"
+}
+
 is_valid_path() 
 {
 	test -e "$1"
