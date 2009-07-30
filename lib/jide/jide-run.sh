@@ -31,27 +31,7 @@ jide_help_run()
 
 jide_run() 
 {
-#	echo "COMMAND='run'"
-#	echo "ARGS=$*"
-
-	#cd $JIDE_PROJECT_HOME
-	
-	#__jide_is_project_dir || exit 1
-	
-	#if [ ! -d $JIDE_PROJECT_CONFIG_DIR ]; then
-	#	echo "JIDE: Not project directory"
-	#	exit -1
-	#fi
-
-	#if [ ! -d $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES ]; then
-	#	echo "Project not compiled"
-	#	exit -1
-	#else
-	#	if [ -z "$(ls $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSES)" ]; then
-	#		echo "There are not main class in this project"
-	#		exit -1		
-	#	fi	
-	#fi
+	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 	
 	if [ $# -ne 0 ]; then
 
@@ -61,28 +41,17 @@ jide_run()
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
 	
-		local ALL=0
 		local JFILES=${*%--}
 
 		while true ; do
 			case "$1" in
 				-s|--sourcepath) JIDE_PROJECT_SRCDIR=$2;   shift 2;;
 				-c|--classpath)  JIDE_PROJECT_CLASSDIR=$2; shift 2;;
-				-D|--project-discovery) ALL=1;shift;;
 				--) shift; break;;
-				-h|-?|--help) jide_help_compile; exit 0;;
+				-h|-?|--help) jide_help_run; exit 0;;
 				*) shift;;
 			esac
 		done	
-	fi
-	
-	if [ -n "$1" ] && [ $ALL -eq 1 ]; then 
-		local ROOT="$(__jide_get_project_home_from_javafile "$1")"
-		if [ -n "$ROOT" ]; then
-			JIDE_PROJECT_HOME="$ROOT"		
-		fi
-		
-		JFILES=""
 	fi
 
 	if [ -z "$JFILES" ]; then

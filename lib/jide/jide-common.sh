@@ -50,17 +50,23 @@ JIDE_PROJECT_JAVA_SOURCES="sources"
 
 ### COMMON FUNCTION ### 
 
-__jide_remove_param() # args: option value string
+__jide_remove_arg() # Arg: <array_name>
 {
-	[ $# -lt 3 ] && return 1;
-		
-	local OPT="$1"
-	local ARG="$2"
-	shift 2
-	local ARGS="$*"
+	[ $# -lt 2 ] && return 1
 	
-	echo $* | awk -v OPT="$OPT" -v ARG="$ARG" '{ gsub(OPT"( *|=)"ARG,""); print}'
+	local ARRAY_S=$(array_to_string $1)	
+	local OPT=$(echo "$2" | tr -d \')
+	local ARG=$(echo "$3" | tr -d \')
+	
+	eval array_init $1 $(
+		echo $ARRAY_S | sed "s/'$OPT' *'$ARG'//g" | \
+			            sed "s/'$OPT *$ARG'//g"   | \
+			            sed "s/'$OPT=$ARG'//g"    | \
+			            sed "s/''//g"             | \
+			            sed "s/^ *//g"
+	)
 }
+
 
 __jide_project_get_property() 
 {
@@ -128,8 +134,8 @@ __jide_set_project_source_dir()
 		
 		[ ! -d "$SRC_DIR" ] && mkdir "$SRC_DIR"
 		ln -fs "$SRC_DIR" "$JIDE_PROJECT_CONFIG_DIR/src_dir"
-		rm "$SRC_DIR/.jide-src" 2> /dev/null
-		ln -fs "$PRJ_DIR" "$SRC_DIR/.jide-src"
+		rm "$SRC_DIR/.jide-project" 2> /dev/null
+		ln -fs "$PRJ_DIR" "$SRC_DIR/.jide-project"
 	fi	
 }
 
@@ -170,7 +176,7 @@ __jide_get_project_class_dir() # No args
 
 __jide_is_project_source_dir()
 {
-	test -L "$(get_absolute_path "$1")/.jide-src"
+	test -L "$(get_absolute_path "$1")/.jide-project"
 }
 
 __jide_get_project_home_from_javafile()
@@ -205,7 +211,7 @@ __jide_is_project_dir()
 	if [ ! -d "$PRJ_DIR/$JIDE_PROJECT_CONFIG_DIR" ]; then
 		echo "JIDE: The directory '$PRJ_DIR' isn't a JIDE Project"
 		echo "      If you want make a project execute:"
-		echo "      $JIDE_PROGNAME init <option>"
+		echo "      $JIDE_PROGNAME init <options>"
 		return 1
 	fi
 	
@@ -524,7 +530,7 @@ __jide_compile() # args: java files
 			jfile="$(get_absolute_path "$jfile")"
 			
 			local PRJ_DIR="$(__jide_get_project_home_from_javafile "$1")"
-	
+			
 			test -z "$PRJ_DIR" && return 3 # No javafile of JIDE project
 	
 			JIDE_PROJECT_HOME="$PRJ_DIR"

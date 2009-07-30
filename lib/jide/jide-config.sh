@@ -29,7 +29,8 @@ jide_help_config()
 
 jide_config() 
 {
-#	echo "JIDE CONFIGURATION"
+	echo
+	echo "JIDE CONFIGURATION"
 	
 #	JIDE_SCRIPT=$(get_absolute_path $JIDE_PROGNAME)
 
@@ -39,7 +40,7 @@ jide_config()
 	
 	if [ -n "$1" ]; then	
 		if [ -f "$1" ]; then
-			#echo "Configuration file: $1"	
+			echo "Configuration file: $1"	
 			source $1
 		else
 			print_error "Configuration file: $1 not found"; exit 2;
@@ -55,15 +56,20 @@ jide_config()
 		             "/usr/local/etc/jide/$JIDE_CONFIG_FILE"
 		do
 			if [ -f "$cfile" ]; then
-				#echo "Configuration file: $cfile"	
-				#echo
+				echo "Configuration file: $cfile"	
+				echo
 				source $cfile
 				break
 			fi
 		done
 	fi
 	
-	
+	JIDE_PROJECT_HOME=${JIDE_PROJECT_HOME:=$PWD}	
+
+	#echo "JIDE Project HOME: '$JIDE_PROJECT_HOME'"
+	cd 	$JIDE_PROJECT_HOME
+
+		
 	#test $JIDE_GUI -eq 1 && ! is_program_installed zenity && JIDE_GUI=0
 	#echo "GUI=$JIDE_GUI"
 	

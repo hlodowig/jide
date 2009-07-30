@@ -109,6 +109,11 @@ jide_info()
 	#echo "COMMAND='info'"
 	#echo "ARGS=$*"
 	
+	__jide_is_project_dir "$JIDE_PROJECT_HOME" || exit 1
+
+	local INFO_GET=0
+	local PROPERTY=""
+
 	if [ $# -ne 0 ]; then
 
 		# Si raccoglie la stringa generata da getopt.
@@ -117,42 +122,9 @@ jide_info()
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
 		
-		local ROOT=""
-		local GET=0
-		local PROPERTY=""
-		
-		local CONFIGFILE=""
-		
-		local ALL=0
-		local JFILE
-		local JFILES=${*%--}
-
 		while true ; do
 			case "$1" in
-				-p|--project) 
-					if [ -$ALL -eq 0 ]; then
-						ROOT="$2"
-						echo "ROOT=$ROOT"
-					else
-						echo "Non posso settare la home directory del progetto"
-						echo "Questa opzione va in conflitto con --project-discovery"
-						return 1						
-					fi
-					shift 2;;
-				-D|--project-discovery) 
-					if [ -z "$ROOT" ]; then
-						ALL=1
-						JFILE="$2"
-					else
-						echo "Non posso attivare la procedura Project discovery"
-						echo "Questa opzione va in conflitto con --project"
-						return 1	
-					fi
-					shift 2;;
-				-C|--config) CONFIGFILE=$2; shift 2;;
-				--get) GET=1; PROPERTY="$2"; shift 2 ;;
-				-x|--gui) JIDE_GUI=1; shift ;;
-				-X|--no-gui) JIDE_GUI=0; shift ;;
+				--get) INFO_GET=1; PROPERTY="$2"; shift 2 ;;
 				-h|--help) jide_help_info; exit 0;;
 				--) shift; break;;
 				*) shift;;
@@ -160,25 +132,7 @@ jide_info()
 		done	
 	fi
 
-	
-	if [ $ALL -eq 1 ] && [ -n "$JFILE" ]; then 
-		ROOT="$(__jide_get_project_home_from_javafile "$JFILE")"
-		JFILES=""
-	fi
-	
-	if [ -n "$ROOT" ]; then
-		JIDE_PROJECT_HOME="$ROOT"		
-	fi
-
-	cd 	${JIDE_PROJECT_HOME:=$PWD}
-	ls
-	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
-
-	if [ -n "$CONFIGFILE" ]; then
-		jide_config $CONFIGFILE
-	fi
-	
-	if [ $GET -eq 1 ] && [ -n "$PROPERTY" ]; then
+	if [ $INFO_GET -eq 1 ] && [ -n "$PROPERTY" ]; then
 		case "$PROPERTY" in
 			name)             __jide_project_get_property JIDE_PROJECT_NAME;;
 			desc|description) __jide_project_get_property JIDE_PROJECT_DESC;;

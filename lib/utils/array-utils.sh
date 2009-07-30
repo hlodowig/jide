@@ -52,7 +52,7 @@ array_compact() # Args: <array_name>
 			eval ARG="\${$ARRAY_NAME[$i]}"
 		done
 
-		eval ARRAY_TMP[$elem_num]=\${$ARRAY_NAME[$i]}
+		eval ARRAY_TMP[$elem_num]=\$ARG
 		let elem_num=$elem_num+1
 		let i=$i+1
 	done
@@ -60,8 +60,35 @@ array_compact() # Args: <array_name>
 	array_copy ARRAY_TMP $ARRAY_NAME
 }
 
-array_to_quoting_string()
+# Compact array positions
+array_print() # Args: <array_name>
 {
+	[ -z "$1" ] && return 1
+	
+	local ARRAY_NAME=$1
+
+	local i=0
+	local elem_num=0
+	
+	eval local ARRAY_SIZE="\${#$ARRAY_NAME[@]}"
+
+	while [ $elem_num -lt $ARRAY_SIZE ]; do
+		eval ARG="\${$ARRAY_NAME[$i]}"
+		while [ -z "$ARG" ]; do
+			let i=$i+1		
+			eval ARG="\${$ARRAY_NAME[$i]}"
+		done
+
+		eval echo "\$ARRAY_NAME[$i]=\$ARG"
+		let elem_num=$elem_num+1
+		let i=$i+1
+	done	
+}
+
+array_to_string()
+{
+	[ -z "$1" ] && return 1
+
 	local ARRAY_NAME=$1
 	local OUT=""
 	local i=0
@@ -72,12 +99,22 @@ array_to_quoting_string()
 	while [ $elem_num -lt $ARRAY_SIZE ]; do
 		eval ARG="\${$ARRAY_NAME[$i]}"
 		if [ -n "$ARG" ]; then
-			OUT="$OUT \"$ARG\""
+			OUT="$OUT '$ARG'"
 			let elem_num=$elem_num+1
 		fi
 		let i=$i+1
 	done
 	
 	echo $OUT
+}
+
+string_to_array()
+{
+	[ -z "$1" ] && return 1
+
+	local ARRAY_NAME=$1
+	shift
+	echo $*
+	eval $ARRAY_NAME="(\$*)"
 }
 

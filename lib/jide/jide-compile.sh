@@ -39,29 +39,17 @@ jide_compile()
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
 	
-		local ALL=0
 		local JFILES=${*%--}
 
 		while true ; do
 			case "$1" in
 				-s|--sourcepath) JIDE_PROJECT_SRCDIR=$2;   shift 2;;
 				-c|--classpath)  JIDE_PROJECT_CLASSDIR=$2; shift 2;;
-				-D|--project-discovery) ALL=1;shift;;
 				--) shift; break;;
 				-h|-?|--help) jide_help_compile; exit 0;;
 				*) shift;;
 			esac
 		done	
-	fi
-
-	
-	if [ -n "$1" ] && [ $ALL -eq 1 ]; then 
-		local ROOT="$(__jide_get_project_home_from_javafile "$1")"
-		if [ -n "$ROOT" ]; then
-			JIDE_PROJECT_HOME="$ROOT"		
-		fi
-		
-		JFILES=""
 	fi
 	
 	#(

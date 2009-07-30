@@ -81,7 +81,12 @@ get_java_classname() # arg: javafile
 	test -z "$1"        && return 1 # No input
 	! is_java_file "$1" && return 2 # No java file (*.java)
 
-	echo "$(get_java_package "$1").$(get_filename "$1" | cut -d. -f1)"
+	local classname=$(get_filename "$1" | cut -d. -f1)	
+	local package=$(get_java_package "$1")
+	
+	[ -n "$package" ] && classname=$package.$classname
+	
+	echo $classname
 }
 
 get_java_classfile() # arg: javafile [classdir]
