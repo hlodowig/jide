@@ -24,7 +24,7 @@
 
 # JIDE vars
 
-JIDE_VERSION="0.1.1"
+JIDE_VERSION="0.1.3"
 JIDE_AUTHOR="Luigi Capraro [luigi.capraro@gmail.com]"
 JIDE_CONFIG_FILE="jide.config"
 JIDE_GUI=0

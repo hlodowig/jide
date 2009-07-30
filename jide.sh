@@ -67,22 +67,22 @@ import()
 	fi
 }
 
-##### IMPORT MODULES #####
-import utils.common-utils
-import utils.fs-utils
-import utils.array-utils
-import utils.java-utils
-
-import jide.jide-common
-import jide.jide-config
-import jide.jide-init
-import jide.jide-info
-import jide.jide-compile
-import jide.jide-run
-import jide.jide-clean
-import jide.jide-delete
-import jide.jide-archive
-##########################
+##### IMPORT MODULES ######
+import utils.common-utils #
+import utils.fs-utils     #
+import utils.array-utils  #
+import utils.java-utils   #
+                          #
+import jide.jide-common   #
+import jide.jide-config   #
+import jide.jide-init     #
+import jide.jide-info     #
+import jide.jide-compile  #
+import jide.jide-run      #
+import jide.jide-clean    #
+import jide.jide-delete   #
+import jide.jide-archive  #
+###########################
 
 jide_usage() 
 {
@@ -164,7 +164,8 @@ jide_main()
 {
 	# Se al programma non vengono passati argomenti visualizza la stampa di 
 	# utilizzo ed esci
-	if [ ${#JIDE_ARGS[*]} -eq 0 ]; then
+
+	if [ $(array_size JIDE_ARGS) -eq 0 ]; then
 		jide_usage
 		exit 1
 	fi
@@ -189,17 +190,17 @@ jide_main()
 	fi
 }
 
-### END COMMANDS SECTION ###
-
-### MAIN PROGRAM         ###
-
-i=0
-while [ -n "$1" ]
-do
-	JIDE_ARGS[$i]="$1"
-	let i=$i+1
-	shift
-done
-
-jide_main $*
+##### MAIN PROGRAM ######
+                        #
+i=0                     #
+while [ -n "$1" ]       #
+do                      #
+	JIDE_ARGS[$i]="$1"  #
+	let i=$i+1          #
+	shift               #
+done                    #
+                        #
+jide_main $*            #
+                        #
+#########################
 

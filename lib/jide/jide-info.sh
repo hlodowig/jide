@@ -109,8 +109,6 @@ jide_info()
 	#echo "COMMAND='info'"
 	#echo "ARGS=$*"
 	
-	__jide_is_project_dir "$JIDE_PROJECT_HOME" || exit 1
-
 	local INFO_GET=0
 	local PROPERTY=""
 
@@ -131,6 +129,9 @@ jide_info()
 			esac
 		done	
 	fi
+	
+	__jide_is_project_dir "$JIDE_PROJECT_HOME" || exit 1
+
 
 	if [ $INFO_GET -eq 1 ] && [ -n "$PROPERTY" ]; then
 		case "$PROPERTY" in

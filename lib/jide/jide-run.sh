@@ -31,7 +31,6 @@ jide_help_run()
 
 jide_run() 
 {
-	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 	
 	if [ $# -ne 0 ]; then
 
@@ -53,6 +52,8 @@ jide_run()
 			esac
 		done	
 	fi
+
+	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 
 	if [ -z "$JFILES" ]; then
 		if [ $JIDE_GUI -eq 1 ]; then

@@ -23,6 +23,15 @@ array_clean() # Args: <array_name> <arg1> ...
 	eval "$1=()"
 }
 
+# Return size of array
+array_size() # Args: <array_name>
+{
+	[ -z "$1" ] && return 1
+	
+	local ARRAY_NAME=$1
+	eval echo "\${#$ARRAY_NAME[*]}"
+}
+
 
 # Copy array 1 into array 2
 array_copy() # Args: <array1_name> <array_name2>
