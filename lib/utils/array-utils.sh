@@ -45,28 +45,16 @@ array_copy() # Args: <array1_name> <array_name2>
 array_compact() # Args: <array_name>
 {
 	[ -z "$1" ] && return 1
-	
-	local ARRAY_TMP=()
+
+	eval "$1=(\${$1[@]})"
+}
+
+array_get_value_at() # Args: <array_name> <item>
+{
+	[ $# -lt 2 ] && return 1
 	local ARRAY_NAME=$1
-	local OUT=""
-	local i=0
-	local elem_num=0
-	
-	eval local ARRAY_SIZE="\${#$ARRAY_NAME[@]}"
+	eval echo "\${$ARRAY_NAME[$2]}"
 
-	while [ $elem_num -lt $ARRAY_SIZE ]; do
-		eval ARG="\${$ARRAY_NAME[$i]}"
-		while [ -z "$ARG" ]; do
-			let i=$i+1		
-			eval ARG="\${$ARRAY_NAME[$i]}"
-		done
-
-		eval ARRAY_TMP[$elem_num]=\$ARG
-		let elem_num=$elem_num+1
-		let i=$i+1
-	done
-	
-	array_copy ARRAY_TMP $ARRAY_NAME
 }
 
 # Compact array positions
