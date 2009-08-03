@@ -227,7 +227,7 @@ __jide_is_project_dir()
 
 __jide_project_move_in()
 {
-	cd ${JIDE_PROJECT_HOME:-$PWD}
+	cd ${JIDE_PROJECT_HOME:=$PWD}
 	__jide_is_project_dir
 }
 
