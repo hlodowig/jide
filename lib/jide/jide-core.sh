@@ -375,25 +375,6 @@ __jide_mainclass_print_list()
 	)
 }
 
-__jide_mainclass_print_list2() 
-{
-	(
-	__jide_project_move_in
-
-	local mp_links="$(__jide_mainclass_get_links)"
-	if [ -n "$mp_links" ]; then
-		local mp_num=$(__jide_mainclass_number)
-		local mp_cifre=${#mp_num}
-		echo "[*] Project Main class: $mp_num"
-		for mp in $mp_links; do
-			printf "    [%${mp_cifre}d] %s\n" $mp $(readlink $JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSDIR/$mp)
-		done
-	else
-		echo "JIDE Project '$(__jide_project_get_name)': There aren't main class compiled!"
-	fi
-	)
-}
-
 __jide_mainclass_find_new_id()
 {
 	local mainclass_id=0

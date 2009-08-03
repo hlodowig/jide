@@ -56,13 +56,14 @@ jide_run()
 	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 
 	if [ -z "$JFILES" ]; then
-		if [ $JIDE_GUI -eq 1 ]; then
-		__jide_mainclass_run  $(__jide_mainclass_print_list | tr '\t' '\n' | zenity --list --column="ID" --column="Program" --print-column=2 --text="Seleziona un programma" --title="JIDE Project '$(__jide_project_get_name)': Main classes" --width=300 --height=300)
+		if [ $(__jide_mainclass_number) -eq 1 ]; then
+			__jide_mainclass_run 0
 		else
-			if [ $(__jide_mainclass_number) -eq 1 ]; then
-				__jide_mainclass_run 0
+
+			if [ $JIDE_GUI -eq 1 ]; then
+				__jide_mainclass_run  $(__jide_mainclass_print_list | tr '\t' '\n' | zenity --list --column="ID" --column="Program" --print-column=2 --text="Seleziona un programma" --title="JIDE Project '$(__jide_project_get_name)': Main classes" --width=300 --height=300)
 			else
-				__jide_mainclass_print_list2
+				__jide_mainclass_print_list | awk '{printf "[%d] %s\n", $1, $2}'
 			fi
 		fi
 		exit 0
