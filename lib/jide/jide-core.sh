@@ -414,7 +414,6 @@ __jide_mainclass_find_new_id()
 __jide_mainclass_set() 
 {
 	test -z "$1"        && return 1 # No mainclass
-	#test -z "$2"        && return 2 # No mainclass id
 	
 	! is_java_file "$1" && return 3 # No java file (*.java)
 
@@ -425,120 +424,61 @@ __jide_mainclass_set()
 	
 	if is_java_mainclass "$jfile"; then
 	
-		#echo "Trovato main in $jfile"
 		classname=$(get_java_classname $jfile) 
-		
 		(
-			#echo "Mainclass source file='$jfile'"		
-			#echo "Mainclass classname='$classname'"
-			
 			__jide_project_move_in
 			cd $JIDE_PROJECT_CONFIG_DIR
 			
 			if ! is_directory "$JIDE_PROJECT_MAIN_CLASSDIR"
 			then
-				#echo "Make dir: $(get_absolute path JIDE_PROJECT_MAIN_CLASSDIR)"
 				mkdir "$JIDE_PROJECT_MAIN_CLASSDIR" || return 1
 			fi
 		
 			cd "$JIDE_PROJECT_MAIN_CLASSDIR"
 			
 			if [ -n "$2" ]; then
-				#echo "ID=$2 passato come parametro"
-
 				mainclass_id=$2
 			
 				if [ -f $classname ]; then
-					#echo "### Mainclass '$classname' esiste gia'"
-
 					local mc_id=$(cat "$classname")
-					if [ $mainclass_id -ne $mc_id ]; then					
-						echo $mainclass_id > $classname
-						#echo "Mainclass '$classname' rimuovi il vecchio link id=$mc_id"
-						rm $mc_id
-					else
-						#echo "Mainclass '$classname' con stesso id=$2"
-						#echo "Non fare nulla"
-
-						return 0				
-					fi
-				else
-					echo $mainclass_id > $classname				
+					[ $mainclass_id -eq $mc_id ] && return 0					
+					rm $mc_id
 				fi
+				echo $mainclass_id > $classname
 				
 				
 				if [ -e "$mainclass_id" ]; then
-					#echo "Mainclass ID=$2 esiste gia'"
-			
 					mc_name="$(__jide_mainclass_get $mainclass_id)"
 				
-					#echo "$mainclass_id --> $mc_name"
-				
 					if [ "$classname" != "$mc_name" ]; then
-
-						#echo "Mainclass ID=$2 punta a una classe diversa da'$classname': '$mc_name'"
-				
-						#echo -n "'$mc_name' verra' spostata..."
-					
 						local mc_new_id=$(__jide_mainclass_find_new_id)
-						#echo "il nuovo id e' $mc_new_id"
-						
 						echo $mc_new_id > $mc_name
 						ln -sf $mc_name $mc_new_id
-					#else
-						#echo "Mainclass ID=$2 punta alla stessa classe '$classname'"
-						#echo "non fare nulla!"
 					fi
 				fi
 
-				#echo "Mainclass '$classname': crea link $mainclass_id"
 				ln -sf $classname $mainclass_id
 
 			else # mainclass id non specificato
-				#echo "Mainclass ID non specificato"
 				if [ ! -f "$classname" ]; then
-					#echo -n "Trova il primo Mainclass ID disponibile..."
 					mainclass_id=$(__jide_mainclass_find_new_id)
-					#echo $mainclass_id
 					echo $mainclass_id > $classname				
-
-					#echo "Mainclass '$classname': crea link $mainclass_id"
 					ln -sf $classname $mainclass_id
 				else
-					#echo "La main classe '$classname' gia' esiste"
 					mainclass_id=$(cat "$classname")
-				
-					#echo "Main class ID=$mainclass_id"
-				
 					if [ -z "$mainclass_id" ]; then
-						#echo "ma il contenuto è nullo"
 						mainclass_id=$(__jide_mainclass_find_new_id)
 						echo $mainclass_id > $classname
 					fi
 				
 					if [ ! -e $mainclass_id ]; then
-						#echo "ma non esiste il link provvedo a crealo (ID=$mainclass_id)"
 						ln -sf $classname $mainclass_id
 					else
 						mc_name="$(__jide_mainclass_get $mainclass_id)"
-				
-						#echo "$mainclass_id --> $mc_name"
-				
 						if [ "$classname" != "$mc_name" ]; then
-
-							#echo "Mainclass ID=$mainclass_id punta a una classe diversa da'$classname': '$mc_name'"
-							#echo "'$classname' verra' spostata..."
-					
 							mainclass_id=$(__jide_mainclass_find_new_id)
-
-							#echo "Mainclass '$classname': crea link $mainclass_id"
-							#echo $mainclass_id > $classname
 							ln -sf $classname $mainclass_id
-						#else
-							#echo "Mainclass ID=$mainclass_id punta alla stessa classe '$classname'"
-							#echo "non fare nulla!"
 						fi
-					
 					fi
 				fi
 			fi
