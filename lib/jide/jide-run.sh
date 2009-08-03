@@ -32,34 +32,43 @@ jide_help_run()
 jide_run() 
 {
 	
+	local ALL=0
+	local LIST=0
+	local JFILES=
+	
 	if [ $# -ne 0 ]; then
 
 		# Si raccoglie la stringa generata da getopt.
-		local ARGS=$(getopt -o ?hDs:c: -l sourcepath:,project-discovery,classpath:,help  -- "$@" 2> /dev/null)
+		local ARGS=$(getopt -o hla -l help,list,all  -- "$@")
 
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
-	
-		local JFILES=${*%--}
-
+		
 		while true ; do
 			case "$1" in
-				-s|--sourcepath) JIDE_PROJECT_SRCDIR=$2;   shift 2;;
-				-c|--classpath)  JIDE_PROJECT_CLASSDIR=$2; shift 2;;
+				-a|--all)  ALL=1; shift;;
+				-l|--list) LIST=1; shift;;
 				--) shift; break;;
-				-h|-?|--help) jide_help_run; exit 0;;
+				-h|--help) jide_help_run; exit 0;;
 				*) shift;;
 			esac
-		done	
+		done
+		
+		JFILES=$*
 	fi
 
 	__jide_is_project_dir $JIDE_PROJECT_HOME || exit 1
 
-	if [ -z "$JFILES" ]; then
-		if [ $(__jide_mainclass_number) -eq 1 ]; then
+	
+	if [ $ALL -eq 1 ]; then
+	
+		JFILES=$(__jide_mainclass_get_links)
+	
+	elif [ -z "$JFILES" ]; then
+
+		if [ $LIST -eq 0 ] && [ $(__jide_mainclass_number) -eq 1 ]; then
 			__jide_mainclass_run 0
 		else
-
 			if [ $JIDE_GUI -eq 1 ]; then
 				__jide_mainclass_run  $(__jide_mainclass_print_list | tr '\t' '\n' | zenity --list --column="ID" --column="Program" --print-column=2 --text="Seleziona un programma" --title="JIDE Project '$(__jide_project_get_name)': Main classes" --width=300 --height=300)
 			else
