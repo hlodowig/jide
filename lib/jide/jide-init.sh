@@ -35,9 +35,7 @@ jide_init()
 
 	JIDE_PROJECT_HOME=${JIDE_PROJECT_HOME:=$PWD}
 	echo "INIT: $(get_relative_path "$JIDE_PROJECT_HOME")"
-	
-	cd $JIDE_PROJECT_HOME
-	
+		
 	local FORCE=0
 	local PROJ_NAME=$(basename $JIDE_PROJECT_HOME)
 	local PROJ_AUTHOR=$USER
@@ -45,7 +43,7 @@ jide_init()
 	if [ $# -ne 0 ]; then
 
 		# Si raccoglie la stringa generata da getopt.
-		local ARGS=$(getopt -o ?hs:c:n:d:a:f -l name:,description:,sourcepath:,classpath:,author:,help  -- "$@")
+		local ARGS=$(getopt -q -o ?hs:c:n:d:a:f -l name:,description:,sourcepath:,classpath:,author:,help,force  -- "$@")
 
 		# Si trasferisce nei parametri $1, $2,...
 		eval set -- "$ARGS"
@@ -67,6 +65,18 @@ jide_init()
 			esac
 		done	
 	fi
+	
+	if [ ! -d "$JIDE_PROJECT_HOME" ]; then 
+		if [ $FORCE -eq 1 ]; then
+			echo "Create directory: '$JIDE_PROJECT_HOME'"
+			mkdir $JIDE_PROJECT_HOME
+		else
+			echo "JIDE: Directory '$JIDE_PROJECT_HOME' not found!"
+			return 2
+		fi
+	fi
+	
+	cd $JIDE_PROJECT_HOME
 	
 	if [ -d $JIDE_PROJECT_CONFIG_DIR ]; then
 		if [ $FORCE -eq 0 ]; then

@@ -71,6 +71,7 @@ import()
 import utils.common-utils #
 import utils.fs-utils     #
 import utils.array-utils  #
+import utils.list-utils  #
 import utils.java-utils   #
                           #
 import jide.jide-core     #
@@ -200,7 +201,7 @@ do                      #
 	shift               #
 done                    #
                         #
-jide_main $*            #
+jide_main               #
                         #
 #########################
 

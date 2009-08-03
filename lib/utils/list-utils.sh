@@ -17,6 +17,11 @@ list_size() # Args: <list_name>
 	array_size $1
 }
 
+list_is_empty() # Args: <list_name>
+{
+	array_is_empty $1
+}
+
 
 # Copy list 1 into list 2
 list_copy() # Args: <list1_name> <list2_name>

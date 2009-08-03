@@ -53,17 +53,26 @@ __jide_remove_arg() # Arg: <array_name>
 {
 	[ $# -lt 2 ] && return 1
 	
+	list_is_empty $1 && return
+	
+	#echo "JIDE REMOVE ARG '$2' '$3'"
+	#echo "FROM $1=$( list_print $1 )"
+	
 	local ARRAY_S=$(array_to_string $1)	
 	local OPT=$(echo "$2" | tr -d \')
 	local ARG=$(echo "$3" | tr -d \')
+
+	#echo "0. $ARRAY_S"
+	ARRAY_S=$(echo $ARRAY_S | gawk "{gsub("\"\'$OPT\'\"",\"\"); print}")
+	#echo "1. $ARRAY_S"
+	ARRAY_S=$(echo $ARRAY_S | gawk "{gsub("\"\'$ARG\'\"",\"\"); print}")
+	#echo "2. $ARRAY_S"
+	ARRAY_S=$(echo $ARRAY_S | gawk "{gsub("\"\'$OPT"=?"$ARG\'\"",\"\"); print}")
+	#echo "3. $ARRAY_S"
 	
-	eval array_init $1 $(
-		echo $ARRAY_S | sed "s/'$OPT' *'$ARG'//g" | \
-			            sed "s/'$OPT *$ARG'//g"   | \
-			            sed "s/'$OPT=$ARG'//g"    | \
-			            sed "s/''//g"             | \
-			            sed "s/^ *//g"
-	)
+	eval array_init $1 $(echo $ARRAY_S)
+	
+	#echo "EXIT"
 }
 
 
@@ -87,6 +96,11 @@ __jide_project_get_property()
 
 __jide_project_set_property() 
 {
+	if [ ! -d $JIDE_PROJECT_HOME ]; then
+		echo "JIDE: Directory: $JIDE_PROJECT_HOME not found!"
+		return 1
+	fi
+	
 	cd $JIDE_PROJECT_HOME
 
 	case $1 in
@@ -322,11 +336,9 @@ __jide_mainclass_get()
 			
 			cd "$JIDE_PROJECT_CONFIG_DIR/$JIDE_PROJECT_MAIN_CLASSDIR"
 
-			! is_link "$1" && return 1
-
 			case "$1" in
 				*[!0-9]*) echo "$1";;
-				*) readlink "$1";;
+				*) ! is_link "$1" && return || readlink "$1";;
 			esac
 		)
 	fi
@@ -550,7 +562,7 @@ __jide_mainclass_run()
 	(		
 		__jide_project_move_in
 		
-		if [ -n "$prog" ] || [ ${FORCE:=0} -eq 1 ]; then
+		if [ -n "$prog" ] || [ ${FORCE:-0} -eq 1 ]; then
 			echo "JIDE Run program: $prog"
 			echo
 			$JAVA_VM -cp $JIDE_PROJECT_CLASSDIR:$CLASSPATH $prog || echo "Programma non valido"

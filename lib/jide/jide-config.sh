@@ -64,10 +64,10 @@ jide_config()
 		done
 	fi
 	
-	JIDE_PROJECT_HOME=${JIDE_PROJECT_HOME:=$PWD}	
-
+	JIDE_PROJECT_HOME=$(get_absolute_path ${JIDE_PROJECT_HOME:=$PWD})
+	
 	#echo "JIDE Project HOME: '$JIDE_PROJECT_HOME'"
-	cd 	$JIDE_PROJECT_HOME
+	#cd 	$JIDE_PROJECT_HOME
 
 		
 	#test $JIDE_GUI -eq 1 && ! is_program_installed zenity && JIDE_GUI=0

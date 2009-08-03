@@ -141,7 +141,7 @@ java_compile() # arg: javafile [classdir]
 	local CLASS_FILE="$(get_java_classfile "$JAVA_FILE" "$CLASS_DIR")"
 	
 	if [ ! -f "$CLASS_FILE" ] || \
-	   [ $(get_file_modify_time "$CLASS_FILE") -gt $(get_file_modify_time "$CLASS_FILE") ]
+	[ $(get_file_modify_time "$JAVA_FILE") -gt $(get_file_modify_time "$CLASS_FILE") ]
 	then
 		echo "Compile: $JAVA_FILE --> $(get_relative_path "$CLASS_FILE")"	
 		eval ${JAVA_COMPILER:-javac} $CLASS_DIR_OPT "$CLASS_DIR" "$JAVA_FILE"

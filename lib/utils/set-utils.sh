@@ -22,6 +22,11 @@ set_size() # Args: <set_name>
 	list_size $1
 }
 
+set_is_empty() # Args: <set_name>
+{
+	list_is_empty $1
+}
+
 
 # Copy set 1 into set 2
 set_copy() # Args: <set1_name> <set2_name>

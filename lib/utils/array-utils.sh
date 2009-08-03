@@ -29,7 +29,13 @@ array_size() # Args: <array_name>
 	[ -z "$1" ] && return 1
 	
 	local ARRAY_NAME=$1
-	eval echo "\${#$ARRAY_NAME[*]}"
+	eval echo "\${#$ARRAY_NAME[@]}"
+}
+
+array_is_empty() # Args: <array_name>
+{
+	local size=$(array_size $1)
+	test $size -eq 0
 }
 
 
@@ -111,7 +117,7 @@ string_to_array()
 
 	local ARRAY_NAME=$1
 	shift
-	echo $*
-	eval $ARRAY_NAME="(\$*)"
+	echo "$@"
+	eval $ARRAY_NAME="(\"\$@\")"
 }
 
