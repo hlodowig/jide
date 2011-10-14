@@ -32,4 +32,6 @@ jide_archive()
 	#TODO
 	echo "COMMAND='archive'"
 	echo "ARGS=$*"
+	
+	tar czf $(__jide_project_get_name)-$(date +%Y-%m-%d-%H%M).tar.gz
 }

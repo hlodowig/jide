@@ -121,47 +121,47 @@ jide_parse_main_options()
 					else
 						echo "Non posso settare la home directory del progetto"
 						echo "Questa opzione va in conflitto con --project-discovery"
-						return 1						
+						return 1
 					fi
 					__jide_remove_arg "$ARG_ARRAY" "$1" "$2"
 					shift 2;;
-				-D|--project-discovery) 
+				-D|--project-discovery)
 					if [ -z "$JIDE_PROJECT_HOME" ]; then
 						eval JIDE_PROJECT_HOME=\"$(__jide_get_project_home_from_javafile "$2")\"
 					else
 						echo "Non posso attivare la procedura Project discovery"
 						echo "Questa opzione va in conflitto con --project"
-						return 1	
+						return 1
 					fi
 					__jide_remove_arg "$ARG_ARRAY" "$1" "$2"
 					shift 2;;
-				-C|--config) 
+				-C|--config)
 					JIDE_CONFIGFILE=$2; 
 					__jide_remove_arg "$ARG_ARRAY" "$1" "$2"
 					shift 2;;
-				-x|--gui) 
-					JIDE_GUI=1; 
+				-x|--gui)
+					JIDE_GUI=1;
 					__jide_remove_arg "$ARG_ARRAY" "$1"
 					shift ;;
-				-X|--no-gui) 
-					JIDE_GUI=0; 
+				-X|--no-gui)
+					JIDE_GUI=0;
 					__jide_remove_arg "$ARG_ARRAY" "$1"
 					shift ;;
 				-h|--help) shift;;
 				-v|--version) echo $JIDE_VERSION; exit 0;;
 				--) shift;;
-				init|compile|run|clean|delete|info|archive) 
+				init|compile|run|clean|delete|info|archive)
 					JIDE_CMD=$1
 					__jide_remove_arg "$ARG_ARRAY" "$1"
 					shift
 					break ;;
-				*) shift;;		
+				*) shift;;
 			esac
-		done	
+		done
 	fi
 }
 
-jide_main() 
+jide_main()
 {
 	# Se al programma non vengono passati argomenti visualizza la stampa di 
 	# utilizzo ed esci
